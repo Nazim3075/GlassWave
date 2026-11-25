@@ -1,13 +1,17 @@
 {
-  "id": "/GlassWave/",
+  "id": "./",
   "name": "GlassWave Music",
   "short_name": "GlassWave",
-  "description": "Modern lossless music player with glass UI powered by Monochrome Tracks API",
+  "description": "Modern lossless music player with glass UI powered by Multi-Provider & Monochrome API",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#07070c",
-  "theme_color": "#0a0a0f",
+  "theme_color": "#07070c",
   "orientation": "portrait-primary",
   "icons": [
     {
