@@ -5,8 +5,8 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0d0b14",
-  "theme_color": "#0d0b14",
+  "background_color": "#050507",
+  "theme_color": "#050507",
   "orientation": "portrait",
   "icons": [
     {

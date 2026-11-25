@@ -1,4 +1,5 @@
-// GlassWave Standalone Player v4.1 - Full Track Priority, Resilient Audio Recovery, Lyrics & Multi-Source Fallback
+// GlassWave Standalone Player v4.3 - Full Track Priority, Resilient Audio Recovery, Lyrics & Multi-Source Fallback
+// Providers: Saavn, JioSaavn, YouTube / YT Music (Piped & Invidious), Deezer, Amazon Music / iTunes, Monochrome
 
 const STORAGE_KEYS = {
   RECENT: 'glasswave_recent_v1',
@@ -12,6 +13,59 @@ const STORAGE_KEYS = {
   REPEAT_PREF: 'glasswave_repeat_v1'
 };
 
+const PIPED_INSTANCES = [
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.adminforge.de',
+  'https://pipedapi.leptons.xyz',
+  'https://api.piped.yt'
+];
+
+const INVIDIOUS_INSTANCES = [
+  'https://inv.nadeko.net',
+  'https://invidious.nerdvpn.de',
+  'https://yewtu.be',
+  'https://invidious.privacyredirect.com'
+];
+
+function parseSaavnLikeList(list, prefix, sourceLabel, providerId) {
+  return (Array.isArray(list) ? list : []).map((item, idx) => {
+    const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
+    const bestObj =
+      downloads.find((d) => d.quality === '320kbps') ||
+      downloads.find((d) => d.quality === '160kbps') ||
+      downloads[downloads.length - 1] ||
+      null;
+    const bestAudio = bestObj?.url || bestObj?.link || '';
+    const quality = bestObj?.quality ? String(bestObj.quality).toUpperCase() : 'FULL';
+    const images = Array.isArray(item.image) ? item.image : [];
+    const cover =
+      images.find((im) => im.quality === '500x500')?.url ||
+      images.find((im) => im.quality === '500x500')?.link ||
+      images[images.length - 1]?.url ||
+      images[images.length - 1]?.link ||
+      '';
+    const primaryArtist =
+      item.artists?.primary?.map((a) => a.name).filter(Boolean).join(', ') ||
+      item.primaryArtists ||
+      'Unknown Artist';
+    return {
+      id: String(item.id || `${prefix}-${idx}`),
+      title: decodeHtml(item.name || item.title || 'Untitled'),
+      artist: decodeHtml(primaryArtist),
+      album: decodeHtml(item.album?.name || ''),
+      year: String(item.year || item.releaseDate || '').slice(0, 4),
+      language: decodeHtml(item.language || ''),
+      quality,
+      isPreview: false,
+      duration: Number(item.duration) || 0,
+      cover,
+      audioUrl: bestAudio,
+      source: sourceLabel,
+      providerId
+    };
+  }).filter((t) => t.title && t.audioUrl);
+}
+
 const PROVIDERS = [
   {
     id: 'saavn_dev',
@@ -20,45 +74,7 @@ const PROVIDERS = [
     isPreview: false,
     searchUrl: (q) => `https://saavn.dev/api/search/songs?query=${encodeURIComponent(q)}&limit=25`,
     lyricsUrl: (id) => `https://saavn.dev/api/songs/${encodeURIComponent(id)}/lyrics`,
-    parse: (json) => {
-      const list = json?.data?.results || [];
-      return list.map((item, idx) => {
-        const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
-        const bestObj =
-          downloads.find((d) => d.quality === '320kbps') ||
-          downloads.find((d) => d.quality === '160kbps') ||
-          downloads[downloads.length - 1] ||
-          null;
-        const bestAudio = bestObj?.url || bestObj?.link || '';
-        const quality = bestObj?.quality ? String(bestObj.quality).toUpperCase() : 'FULL';
-        const images = Array.isArray(item.image) ? item.image : [];
-        const cover =
-          images.find((im) => im.quality === '500x500')?.url ||
-          images.find((im) => im.quality === '500x500')?.link ||
-          images[images.length - 1]?.url ||
-          images[images.length - 1]?.link ||
-          '';
-        const primaryArtist =
-          item.artists?.primary?.map((a) => a.name).filter(Boolean).join(', ') ||
-          item.primaryArtists ||
-          'Unknown Artist';
-        return {
-          id: String(item.id || `saavn-${idx}`),
-          title: decodeHtml(item.name || item.title || 'Untitled'),
-          artist: decodeHtml(primaryArtist),
-          album: decodeHtml(item.album?.name || ''),
-          year: String(item.year || item.releaseDate || '').slice(0, 4),
-          language: decodeHtml(item.language || ''),
-          quality,
-          isPreview: false,
-          duration: Number(item.duration) || 0,
-          cover,
-          audioUrl: bestAudio,
-          source: 'Saavn',
-          providerId: 'saavn_dev'
-        };
-      }).filter((t) => t.title && t.audioUrl);
-    }
+    parse: (json) => parseSaavnLikeList(json?.data?.results || [], 'saavn', 'Saavn', 'saavn_dev')
   },
   {
     id: 'jiosaavn_sumit',
@@ -67,44 +83,106 @@ const PROVIDERS = [
     isPreview: false,
     searchUrl: (q) => `https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=${encodeURIComponent(q)}&limit=25`,
     lyricsUrl: (id) => `https://jiosaavn-api-privatecvc2.vercel.app/lyrics?id=${encodeURIComponent(id)}`,
-    parse: (json) => {
-      const list = json?.data?.results || json?.results || [];
-      return list.map((item, idx) => {
-        const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
-        const bestObj =
-          downloads.find((d) => d.quality === '320kbps') ||
-          downloads.find((d) => d.quality === '160kbps') ||
-          downloads[downloads.length - 1] ||
-          null;
-        const bestAudio = bestObj?.url || bestObj?.link || '';
-        const quality = bestObj?.quality ? String(bestObj.quality).toUpperCase() : 'FULL';
-        const images = Array.isArray(item.image) ? item.image : [];
-        const cover =
-          images.find((im) => im.quality === '500x500')?.url ||
-          images.find((im) => im.quality === '500x500')?.link ||
-          images[images.length - 1]?.url ||
-          images[images.length - 1]?.link ||
-          '';
-        const primaryArtist =
-          item.artists?.primary?.map((a) => a.name).filter(Boolean).join(', ') ||
-          item.primaryArtists ||
-          'Unknown Artist';
-        return {
-          id: String(item.id || `js-${idx}`),
-          title: decodeHtml(item.name || item.title || 'Untitled'),
-          artist: decodeHtml(primaryArtist),
-          album: decodeHtml(item.album?.name || ''),
-          year: String(item.year || item.releaseDate || '').slice(0, 4),
-          language: decodeHtml(item.language || ''),
-          quality,
-          isPreview: false,
-          duration: Number(item.duration) || 0,
-          cover,
-          audioUrl: bestAudio,
-          source: 'JioSaavn',
-          providerId: 'jiosaavn_sumit'
-        };
-      }).filter((t) => t.title && t.audioUrl);
+    parse: (json) => parseSaavnLikeList(json?.data?.results || json?.results || [], 'js', 'JioSaavn', 'jiosaavn_sumit')
+  },
+  {
+    id: 'piped_ytmusic',
+    label: 'YouTube / YT Music (Piped)',
+    badge: 'YT Music · Piped',
+    isPreview: false,
+    search: async (q) => {
+      for (const base of PIPED_INSTANCES) {
+        try {
+          const json = await fetchWithTimeout(
+            `${base}/search?q=${encodeURIComponent(q)}&filter=music_songs`,
+            6500
+          );
+          const items = Array.isArray(json?.items) ? json.items : [];
+          const tracks = items
+            .map((it, idx) => {
+              const videoId = (it.url || '').replace('/watch?v=', '').split('&')[0] || it.id || `piped-${idx}`;
+              const streamUrl = it.streamUrl || (videoId ? `${base}/streams/${encodeURIComponent(videoId)}` : '');
+              return {
+                id: String(videoId),
+                title: decodeHtml(it.title || 'Untitled'),
+                artist: decodeHtml(it.uploaderName || it.artist || 'YouTube Music'),
+                album: decodeHtml(it.album || ''),
+                year: String(it.uploadedDate || '').slice(0, 4),
+                language: '',
+                quality: 'OPUS · YT Music',
+                isPreview: false,
+                duration: Number(it.duration) || 0,
+                cover: it.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+                audioUrl: streamUrl,
+                resolveAudio: async () => {
+                  if (!videoId) return '';
+                  const st = await fetchWithTimeout(`${base}/streams/${encodeURIComponent(videoId)}`, 6500);
+                  const audioStreams = Array.isArray(st?.audioStreams) ? st.audioStreams : [];
+                  audioStreams.sort((a, b) => (Number(b.bitrate) || 0) - (Number(a.bitrate) || 0));
+                  return audioStreams[0]?.url || '';
+                },
+                source: 'YT Music (Piped)',
+                providerId: 'piped_ytmusic'
+              };
+            })
+            .filter((t) => t.title && (t.audioUrl || t.resolveAudio));
+          if (tracks.length > 0) return tracks;
+        } catch (err) {
+          console.warn(`Piped instance ${base} failed:`, err.message);
+        }
+      }
+      return [];
+    }
+  },
+  {
+    id: 'invidious_yt',
+    label: 'YouTube (Invidious)',
+    badge: 'YouTube · Invidious',
+    isPreview: false,
+    search: async (q) => {
+      for (const base of INVIDIOUS_INSTANCES) {
+        try {
+          const json = await fetchWithTimeout(
+            `${base}/api/v1/search?q=${encodeURIComponent(q)}&type=video`,
+            6500
+          );
+          const list = Array.isArray(json) ? json : [];
+          const tracks = list
+            .map((it, idx) => {
+              const videoId = it.videoId || `inv-${idx}`;
+              const thumb = Array.isArray(it.videoThumbnails) && it.videoThumbnails.length > 0
+                ? (it.videoThumbnails.find((x) => x.quality === 'high')?.url || it.videoThumbnails[0].url)
+                : (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '');
+              return {
+                id: String(videoId),
+                title: decodeHtml(it.title || 'Untitled'),
+                artist: decodeHtml(it.author || 'YouTube'),
+                album: '',
+                year: '',
+                language: '',
+                quality: 'AUDIO · Invidious',
+                isPreview: false,
+                duration: Number(it.lengthSeconds) || 0,
+                cover: thumb.startsWith('http') ? thumb : `${base}${thumb}`,
+                audioUrl: `${base}/latest_version?id=${encodeURIComponent(videoId)}&itag=251&local=true`,
+                resolveAudio: async () => {
+                  const vJson = await fetchWithTimeout(`${base}/api/v1/videos/${encodeURIComponent(videoId)}`, 6500);
+                  const formats = Array.isArray(vJson?.adaptiveFormats) ? vJson.adaptiveFormats : [];
+                  const audioOnly = formats.filter((f) => String(f.type || '').startsWith('audio/'));
+                  audioOnly.sort((a, b) => (Number(b.bitrate) || 0) - (Number(a.bitrate) || 0));
+                  return audioOnly[0]?.url || `${base}/latest_version?id=${encodeURIComponent(videoId)}&itag=140&local=true`;
+                },
+                source: 'YouTube (Invidious)',
+                providerId: 'invidious_yt'
+              };
+            })
+            .filter((t) => t.title && t.id);
+          if (tracks.length > 0) return tracks;
+        } catch (err) {
+          console.warn(`Invidious instance ${base} failed:`, err.message);
+        }
+      }
+      return [];
     }
   },
   {
@@ -133,15 +211,40 @@ const PROVIDERS = [
     }
   },
   {
-    id: 'itunes',
-    label: 'iTunes (30s Preview)',
-    badge: '30s Preview · iTunes',
+    id: 'deezer',
+    label: 'Deezer (30s Preview)',
+    badge: 'Deezer · Preview',
+    isPreview: true,
+    searchUrl: (q) => `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=25`,
+    parse: (json) => {
+      const list = Array.isArray(json?.data) ? json.data : [];
+      return list.map((item, idx) => ({
+        id: String(item.id || `dz-${idx}`),
+        title: item.title || item.title_short || 'Untitled',
+        artist: item.artist?.name || 'Deezer Artist',
+        album: item.album?.title || '',
+        year: '',
+        language: '',
+        quality: 'MP3 · 30s',
+        isPreview: true,
+        duration: Number(item.duration) || 30,
+        cover: item.album?.cover_xl || item.album?.cover_big || item.album?.cover_medium || '',
+        audioUrl: item.preview || '',
+        source: 'Deezer',
+        providerId: 'deezer'
+      })).filter((t) => t.title && t.audioUrl);
+    }
+  },
+  {
+    id: 'amazon_itunes',
+    label: 'Amazon / iTunes Catalog (30s)',
+    badge: 'Amazon / iTunes · Preview',
     isPreview: true,
     searchUrl: (q) => `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=25`,
     parse: (json) => {
       const list = json?.results || [];
       return list.map((item, idx) => ({
-        id: String(item.trackId || `it-${idx}`),
+        id: String(item.trackId || `amz-${idx}`),
         title: item.trackName || 'Untitled',
         artist: item.artistName || 'Unknown Artist',
         album: item.collectionName || '',
@@ -152,8 +255,8 @@ const PROVIDERS = [
         duration: 30,
         cover: (item.artworkUrl100 || '').replace('100x100bb', '500x500bb'),
         audioUrl: item.previewUrl || '',
-        source: 'iTunes (30s)',
-        providerId: 'itunes'
+        source: 'Amazon / iTunes',
+        providerId: 'amazon_itunes'
       })).filter((t) => t.title && t.audioUrl);
     }
   }
@@ -181,10 +284,15 @@ function decodeHtml(str) {
 function cleanLyricsText(raw) {
   if (!raw) return '';
   return decodeHtml(String(raw))
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '
+')
+    .replace(/<\/p>/gi, '
+')
     .replace(/<[^>]+>/g, '')
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/
+{3,}/g, '
+
+')
     .trim();
 }
 
@@ -230,7 +338,7 @@ const state = {
   lang: localStorage.getItem(STORAGE_KEYS.LANG_PREF) || 'bn',
   speed: parseFloat(localStorage.getItem(STORAGE_KEYS.SPEED_PREF) || '1'),
   theme: localStorage.getItem(STORAGE_KEYS.THEME_PREF) || 'violet',
-  activeSourceLabel: 'Auto Full Track · Continuous Radio',
+  activeSourceLabel: 'Auto Full Track · Multi-Provider',
   statusMessage: '',
   isLoading: false,
   settingsOpen: false,
@@ -241,7 +349,8 @@ const audio = new Audio();
 audio.preload = 'auto';
 
 function getOrderedProviders(allowPreviewInAuto = false) {
-  const pool = allowPreviewInAuto || state.sourcePref === 'itunes' ? PROVIDERS : FULL_PROVIDERS;
+  const previewIds = ['deezer', 'amazon_itunes'];
+  const pool = allowPreviewInAuto || previewIds.includes(state.sourcePref) ? PROVIDERS : FULL_PROVIDERS;
   if (state.sourcePref === 'auto') return pool;
   const chosen = PROVIDERS.find((p) => p.id === state.sourcePref);
   if (!chosen) return pool;
@@ -268,6 +377,19 @@ function buildSearchQueries(rawQuery) {
   return [q];
 }
 
+async function executeProviderSearch(provider, queryVariant, allowPreviewFallback) {
+  if (typeof provider.search === 'function') {
+    const rawTracks = await provider.search(queryVariant);
+    return (rawTracks || []).filter(
+      (t) => allowPreviewFallback || ['deezer', 'amazon_itunes'].includes(state.sourcePref) || !t.isPreview
+    );
+  }
+  const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 7500);
+  return provider.parse(json).filter(
+    (t) => allowPreviewFallback || ['deezer', 'amazon_itunes'].includes(state.sourcePref) || !t.isPreview
+  );
+}
+
 async function fetchTracksFromProviders(rawQuery, { allowPreviewFallback = false } = {}) {
   const candidateQueries = buildSearchQueries(rawQuery);
   const orderedProviders = getOrderedProviders(allowPreviewFallback);
@@ -276,8 +398,7 @@ async function fetchTracksFromProviders(rawQuery, { allowPreviewFallback = false
   for (const queryVariant of candidateQueries) {
     for (const provider of orderedProviders) {
       try {
-        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 7500);
-        const tracks = provider.parse(json).filter((t) => allowPreviewFallback || state.sourcePref === 'itunes' || !t.isPreview);
+        const tracks = await executeProviderSearch(provider, queryVariant, allowPreviewFallback);
         if (Array.isArray(tracks) && tracks.length > 0) {
           return { tracks, provider, fallbackUsed: false };
         }
@@ -294,8 +415,7 @@ async function fetchTracksFromProviders(rawQuery, { allowPreviewFallback = false
       for (const provider of fallbackPool) {
         if (provider.id === state.sourcePref) continue;
         try {
-          const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 7500);
-          const tracks = provider.parse(json).filter((t) => allowPreviewFallback || !t.isPreview);
+          const tracks = await executeProviderSearch(provider, queryVariant, allowPreviewFallback);
           if (Array.isArray(tracks) && tracks.length > 0) {
             return { tracks, provider, fallbackUsed: true };
           }
@@ -369,7 +489,7 @@ async function runSearch(rawQuery) {
 
   state.query = q;
   state.isLoading = true;
-  state.statusMessage = state.lang === 'bn' ? 'পূর্ণাঙ্গ সোর্স থেকে গান খোঁজা হচ্ছে...' : 'Searching full track sources...';
+  state.statusMessage = state.lang === 'bn' ? 'সোর্সগুলো থেকে গান খোঁজা হচ্ছে...' : 'Searching music sources...';
   render();
 
   const found = await fetchTracksFromProviders(q, { allowPreviewFallback: false });
@@ -378,12 +498,12 @@ async function runSearch(rawQuery) {
     state.activeSourceLabel = found.provider.badge;
     if (state.lang === 'bn') {
       state.statusMessage = found.fallbackUsed
-        ? `নির্বাচিত সোর্সে ফলাফল না থাকায় ${found.provider.label} থেকে ${found.tracks.length}টি পূর্ণাঙ্গ গান দেখানো হচ্ছে`
-        : `${found.tracks.length}টি পূর্ণাঙ্গ গান পাওয়া গেছে · ${found.provider.label}`;
+        ? `নির্বাচিত সোর্সে ফলাফল না থাকায় ${found.provider.label} থেকে ${found.tracks.length}টি গান দেখানো হচ্ছে`
+        : `${found.tracks.length}টি গান পাওয়া গেছে · ${found.provider.label}`;
     } else {
       state.statusMessage = found.fallbackUsed
-        ? `Fallback to ${found.provider.label}: ${found.tracks.length} full tracks found`
-        : `${found.tracks.length} full tracks found · ${found.provider.label}`;
+        ? `Fallback to ${found.provider.label}: ${found.tracks.length} tracks found`
+        : `${found.tracks.length} tracks found · ${found.provider.label}`;
     }
     state.isLoading = false;
     render();
@@ -394,8 +514,8 @@ async function runSearch(rawQuery) {
   state.isLoading = false;
   state.statusMessage =
     state.lang === 'bn'
-      ? 'পূর্ণাঙ্গ সোর্স থেকে গান পাওয়া যায়নি। ইংরেজিতে নাম লিখে বা সেটিংস থেকে অন্য সোর্স চেষ্টা করুন।'
-      : 'No full tracks found. Try English keywords or switch source in Settings.';
+      ? 'সোর্স থেকে গান পাওয়া যায়নি। ইংরেজিতে নাম লিখে বা সেটিংস থেকে অন্য সোর্স চেষ্টা করুন।'
+      : 'No tracks found. Try English keywords or switch source in Settings.';
   render();
 }
 
@@ -426,11 +546,31 @@ async function appendRadioTracks(seedTrack) {
   return false;
 }
 
-function attachAudioSource(track, resumeAtSec = 0) {
+async function attachAudioSource(track, resumeAtSec = 0) {
   audio.pause();
   audio.removeAttribute('src');
   audio.load();
-  audio.src = track.audioUrl;
+
+  let streamUrl = track.audioUrl || '';
+  if (typeof track.resolveAudio === 'function') {
+    try {
+      const resolved = await track.resolveAudio();
+      if (resolved) {
+        streamUrl = resolved;
+        track.audioUrl = resolved;
+      }
+    } catch (err) {
+      console.warn('Stream resolver failed, using fallback URL:', err.message);
+    }
+  }
+
+  if (!streamUrl) {
+    state.isPlaying = false;
+    renderPlayerBar();
+    return;
+  }
+
+  audio.src = streamUrl;
   audio.playbackRate = state.speed;
 
   const startPlayback = () => {
@@ -457,12 +597,12 @@ function attachAudioSource(track, resumeAtSec = 0) {
 }
 
 function playTrack(track, listContext = null, { keepQueue = false } = {}) {
-  if (!track || !track.audioUrl) return;
+  if (!track || (!track.audioUrl && typeof track.resolveAudio !== 'function')) return;
 
   if (!keepQueue) {
     if (Array.isArray(listContext) && listContext.length > 0) {
-      state.queue = listContext.filter((t) => Boolean(t.audioUrl));
-      state.currentIndex = state.queue.findIndex((t) => t.id === track.id && t.audioUrl === track.audioUrl);
+      state.queue = listContext.filter((t) => Boolean(t.audioUrl || typeof t.resolveAudio === 'function'));
+      state.currentIndex = state.queue.findIndex((t) => t.id === track.id && t.source === track.source);
       if (state.currentIndex === -1) {
         state.queue.unshift(track);
         state.currentIndex = 0;
@@ -584,8 +724,9 @@ async function recoverDroppedStream() {
       const match =
         found.tracks.find((t) => t.title.toLowerCase() === current.title.toLowerCase()) ||
         found.tracks[0];
-      if (match && match.audioUrl) {
+      if (match && (match.audioUrl || typeof match.resolveAudio === 'function')) {
         current.audioUrl = match.audioUrl;
+        current.resolveAudio = match.resolveAudio;
         current.source = match.source;
         current.quality = match.quality || current.quality;
         attachAudioSource(current, savedTime);
@@ -631,9 +772,9 @@ audio.addEventListener('timeupdate', () => {
 });
 
 const THEMES = {
-  violet: { accent: '#a855f7', accent2: '#ec4899', bg: '#0b0912', surface: '#151122', surface2: '#1e1830' },
-  emerald: { accent: '#10b981', accent2: '#06b6d4', bg: '#07110f', surface: '#0e1f1c', surface2: '#152e29' },
-  amber: { accent: '#f59e0b', accent2: '#f97316', bg: '#120e07', surface: '#21190d', surface2: '#2e2313' }
+  violet: { accent: '#a855f7', accent2: '#ec4899', bg: '#050507', surface: 'rgba(24, 24, 28, 0.72)', surface2: 'rgba(38, 38, 44, 0.85)', glow1: 'rgba(168, 85, 247, 0.26)', glow2: 'rgba(236, 72, 153, 0.18)' },
+  emerald: { accent: '#10b981', accent2: '#06b6d4', bg: '#040807', surface: 'rgba(14, 31, 28, 0.72)', surface2: 'rgba(21, 46, 41, 0.85)', glow1: 'rgba(16, 185, 129, 0.24)', glow2: 'rgba(6, 182, 212, 0.18)' },
+  amber: { accent: '#f59e0b', accent2: '#f97316', bg: '#070604', surface: 'rgba(33, 25, 13, 0.72)', surface2: 'rgba(46, 35, 19, 0.85)', glow1: 'rgba(245, 158, 11, 0.25)', glow2: 'rgba(249, 115, 22, 0.18)' }
 };
 
 function applyTheme() {
@@ -644,6 +785,8 @@ function applyTheme() {
   root.style.setProperty('--bg', t.bg);
   root.style.setProperty('--surface', t.surface);
   root.style.setProperty('--surface-2', t.surface2);
+  root.style.setProperty('--ambient-color', t.glow1);
+  root.style.setProperty('--ambient-color-2', t.glow2);
 }
 
 function getCurrentTrack() {
@@ -660,6 +803,23 @@ function getNextUpTrack() {
   return state.queue[nextIdx] || null;
 }
 
+function buildCodecSpec(track) {
+  const q = String(track?.quality || '').toUpperCase();
+  if (q.includes('FLAC') || q.includes('LOSSLESS')) {
+    return { codec: 'FLAC', detail: 'Lossless · 48 kHz · Stereo' };
+  }
+  if (q.includes('OPUS') || track?.providerId === 'piped_ytmusic' || track?.providerId === 'jiosaavn_sumit') {
+    return { codec: 'OPUS', detail: '135 kbps · 48 kHz · Stereo' };
+  }
+  if (q.includes('320')) {
+    return { codec: 'AAC', detail: '320 kbps · 44.1 kHz · Stereo' };
+  }
+  if (q.includes('256')) {
+    return { codec: 'AAC', detail: '256 kbps · 44.1 kHz · Stereo' };
+  }
+  return { codec: 'AAC', detail: `${track?.quality || '131 kbps'} · 44.1 kHz · Stereo` };
+}
+
 function renderPlayerBar() {
   const bar = document.getElementById('gw-player-bar');
   if (!bar) return;
@@ -674,6 +834,8 @@ function renderPlayerBar() {
   const pct = totalSec > 0 ? Math.floor((audio.currentTime / totalSec) * 100) : 0;
   const nextTrack = getNextUpTrack();
   const isBn = state.lang === 'bn';
+  const fav = isFavorite(track);
+  const codecInfo = buildCodecSpec(track);
 
   if (state.playerExpanded) {
     const infoPills = [
@@ -692,10 +854,14 @@ function renderPlayerBar() {
 
     bar.className = 'player-bar visible expanded';
     bar.innerHTML = `
-      <div class="expanded-header">
-        <button class="pill-btn" id="gw-collapse-btn">⌄ ${isBn ? 'নিচে নামান' : 'Minimize'}</button>
-        <span class="chip">${escapeHtml(track.quality || track.source || '')}</span>
+      <div>
+        <div class="drag-handle"></div>
+        <div class="expanded-header">
+          <button class="pill-btn" id="gw-collapse-btn">⌄ ${isBn ? 'নিচে নামান' : 'Minimize'}</button>
+          <span class="chip">${escapeHtml(track.quality || track.source || '')}</span>
+        </div>
       </div>
+
       <div class="expanded-art-wrap">
         <img class="expanded-art" src="${escapeAttr(track.cover || 'icon-512.png')}" alt="" onerror="this.src='icon-512.png'">
         <div class="expanded-title">${escapeHtml(track.title)}</div>
@@ -703,12 +869,14 @@ function renderPlayerBar() {
         <div class="info-pills">${infoPills}</div>
         <div class="lyrics-box">${lyricsHtml}</div>
       </div>
+
       <div>
         <div class="player-seek">
           <span id="gw-time-cur">${formatTime(audio.currentTime)}</span>
           <input id="gw-progress" type="range" min="0" max="100" value="${pct}">
           <span id="gw-time-dur">${formatTime(totalSec)}</span>
         </div>
+
         <div class="expanded-controls">
           <button class="ctrl-btn mode-btn ${state.shuffle ? 'active' : ''}" id="gw-shuffle-btn" title="Shuffle">🔀 <span>${isBn ? (state.shuffle ? 'শাফল অন' : 'শাফল') : (state.shuffle ? 'Shuffle ON' : 'Shuffle')}</span></button>
           <button class="ctrl-btn big" id="gw-prev-btn">⏮</button>
@@ -716,6 +884,20 @@ function renderPlayerBar() {
           <button class="ctrl-btn big" id="gw-next-btn">⏭</button>
           <button class="ctrl-btn mode-btn ${state.repeatMode === 'one' ? 'active' : ''}" id="gw-repeat-btn" title="Repeat One">🔂 <span>${isBn ? (state.repeatMode === 'one' ? 'রিপিট ১' : 'রিপিট') : (state.repeatMode === 'one' ? 'Repeat 1' : 'Repeat')}</span></button>
         </div>
+
+        <div class="codec-badge-row">
+          <div class="codec-badge">
+            <span class="codec-tag">${escapeHtml(codecInfo.codec)}</span>
+            <span>${escapeHtml(codecInfo.detail)}</span>
+          </div>
+        </div>
+
+        <div class="secondary-glass-row">
+          <button type="button" class="glass-circle-btn ${fav ? 'active' : ''}" id="gw-exp-fav-btn" title="Favorite">${fav ? '♥' : '♡'}</button>
+          <button type="button" class="glass-circle-btn" id="gw-exp-queue-btn" title="Queue">▤</button>
+          <button type="button" class="glass-circle-btn" id="gw-exp-speed-btn" title="Speed">${state.speed}x</button>
+        </div>
+
         <div class="up-next-box">
           ${isBn ? 'এরপর বাজবে' : 'Up next'}: <strong>${escapeHtml(nextTrack ? `${nextTrack.title} — ${nextTrack.artist}` : (state.autoRadio ? 'অটো রেডিও লোড হচ্ছে...' : 'কিউ শেষ'))}</strong>
         </div>
@@ -739,6 +921,24 @@ function renderPlayerBar() {
       e.stopPropagation();
       state.repeatMode = state.repeatMode === 'one' ? 'queue' : 'one';
       localStorage.setItem(STORAGE_KEYS.REPEAT_PREF, state.repeatMode);
+      renderPlayerBar();
+    });
+    document.getElementById('gw-exp-fav-btn')?.addEventListener('click', (e) => {
+      toggleFavorite(track, e);
+    });
+    document.getElementById('gw-exp-queue-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.playerExpanded = false;
+      state.tab = 'queue';
+      render();
+    });
+    document.getElementById('gw-exp-speed-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const speeds = [1, 1.25, 1.5, 0.75];
+      const next = speeds[(speeds.indexOf(state.speed) + 1) % speeds.length];
+      state.speed = next;
+      audio.playbackRate = next;
+      localStorage.setItem(STORAGE_KEYS.SPEED_PREF, String(next));
       renderPlayerBar();
     });
   } else {
@@ -810,7 +1010,7 @@ function renderTrackList(tracks, emptyText) {
       <div class="empty-state">
         <div class="empty-icon">♪</div>
         <div class="empty-title">${emptyText}</div>
-        <div class="empty-sub">${state.activeSourceLabel}</div>
+        <div class="empty-sub">${escapeHtml(state.activeSourceLabel)}</div>
       </div>
     `;
   }
@@ -857,7 +1057,7 @@ function render() {
 
   const labels = {
     searchPlaceholder: isBn ? 'বাংলা গান বা শিল্পীর নাম লিখুন...' : 'Search songs or artists...',
-    searchResults: isBn ? 'সার্চ রেজাল্ট' : 'SEARCH RESULTS',
+    searchResults: isBn ? 'সার্চ রেজাল্ট' : 'Search Results',
     emptySearchTitle: isBn ? 'গান খুঁজে বের করুন' : 'Search to find songs',
     emptySearchSub: state.activeSourceLabel,
     recent: isBn ? 'সাম্প্রতিক' : 'Recent',
@@ -866,6 +1066,14 @@ function render() {
     queue: isBn ? 'কিউ' : 'Queue',
     searchTab: isBn ? 'সার্চ' : 'Search'
   };
+
+  const quickMoods = [
+    { label: 'All', query: 'Bangla hits' },
+    { label: 'Energize', query: 'Bollywood dance hits' },
+    { label: 'Feel good', query: 'Arijit Singh hits' },
+    { label: 'Relax', query: 'Rabindra Sangeet' },
+    { label: 'Workout', query: 'Tahsan hits' }
+  ];
 
   let bodyContent = '';
   if (state.tab === 'search') {
@@ -882,10 +1090,10 @@ function render() {
       </form>
 
       <div class="quick-chips">
-        <button type="button" class="chip" data-quick="Bangla hits">Bangla Hits</button>
-        <button type="button" class="chip" data-quick="Arijit Singh">Arijit Singh</button>
-        <button type="button" class="chip" data-quick="Tahsan">Tahsan</button>
-        <button type="button" class="chip" data-quick="Rabindra Sangeet">Rabindra Sangeet</button>
+        ${quickMoods.map((m) => {
+          const isActive = state.query.toLowerCase() === m.query.toLowerCase();
+          return `<button type="button" class="chip ${isActive ? 'active' : ''}" data-quick="${escapeAttr(m.query)}">${escapeHtml(m.label)}</button>`;
+        }).join('')}
       </div>
 
       <div class="section-label">
