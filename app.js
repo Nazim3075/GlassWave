@@ -299,6 +299,69 @@ const PROVIDERS = [
     }
   },
   {
+    id: 'meetube_stream',
+    label: 'MeeTube Stream (yashoncode/meetube)',
+    badge: 'Full · MeeTube',
+    isPreview: false,
+    search: async (q) => {
+      // Search via Piped / Invidious music & video endpoints and resolve direct stream URLs
+      for (const base of PIPED_INSTANCES) {
+        try {
+          const json = await fetchWithTimeout(
+            `${base}/search?q=${encodeURIComponent(q)}&filter=music_songs`,
+            6500
+          );
+          const items = Array.isArray(json?.items) ? json.items : [];
+          const tracks = items
+            .map((it, idx) => {
+              const videoId = (it.url || '').replace('/watch?v=', '').split('&')[0] || it.id || `mt-${idx}`;
+              const directStream = it.streamUrl || '';
+              return {
+                id: String(videoId),
+                title: decodeHtml(it.title || 'Untitled'),
+                artist: decodeHtml(it.uploaderName || it.artist || 'MeeTube / YouTube'),
+                album: decodeHtml(it.album || ''),
+                year: String(it.uploadedDate || '').slice(0, 4),
+                language: '',
+                quality: 'STREAM · MeeTube',
+                isPreview: false,
+                duration: Number(it.duration) || 0,
+                cover: it.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+                audioUrl: directStream,
+                resolveAudio: async () => {
+                  if (directStream) return directStream;
+                  if (!videoId) return '';
+                  for (const pBase of PIPED_INSTANCES) {
+                    try {
+                      const st = await fetchWithTimeout(`${pBase}/streams/${encodeURIComponent(videoId)}`, 6500);
+                      const audioStreams = Array.isArray(st?.audioStreams) ? st.audioStreams : [];
+                      audioStreams.sort((a, b) => (Number(b.bitrate) || 0) - (Number(a.bitrate) || 0));
+                      if (audioStreams[0]?.url) return audioStreams[0].url;
+                    } catch {}
+                  }
+                  for (const iBase of INVIDIOUS_INSTANCES) {
+                    try {
+                      const vJson = await fetchWithTimeout(`${iBase}/api/v1/videos/${encodeURIComponent(videoId)}`, 6500);
+                      const formats = Array.isArray(vJson?.adaptiveFormats) ? vJson.adaptiveFormats : [];
+                      const audioOnly = formats.filter((f) => String(f.type || '').startsWith('audio/'));
+                      audioOnly.sort((a, b) => (Number(b.bitrate) || 0) - (Number(a.bitrate) || 0));
+                      if (audioOnly[0]?.url) return audioOnly[0].url;
+                    } catch {}
+                  }
+                  return '';
+                },
+                source: 'MeeTube',
+                providerId: 'meetube_stream'
+              };
+            })
+            .filter((t) => t.title && t.id);
+          if (tracks.length > 0) return tracks;
+        } catch {}
+      }
+      return [];
+    }
+  },
+  {
     id: 'monochrome',
     label: 'Monochrome Lossless',
     badge: 'Lossless · monochrome.st',
