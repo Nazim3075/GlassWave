@@ -1,59 +1,50 @@
-const CACHE = 'glasswave-v3';
-const ASSETS = [
+const CACHE_NAME = 'glasswave-standalone-v1';
+const CORE_ASSETS = [
   './',
   './index.html',
+  './app.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  './icon-maskable-512.png'
+  './icon-512.png'
 ];
 
-// Supported upstream API origins (network-only for live audio/search/metadata)
-const API_ORIGINS = [
-  'https://qobuz-dll.foreyou.workers.dev',
-  'https://lastbabe.velixir.run',
-  'https://tracks.monochrome.st',
-  'https://dzr.tabs-vs-spaces.wtf',
-  'https://eljohnzc-addon.de.deplexo.com',
-  'https://instable.arcod.xyz',
-  'https://lrclib.net'
-];
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => Promise.allSettled(ASSETS.map(url => c.add(url))))
-      .then(() => self.skipWaiting())
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      )
+    )
   );
+  self.clients.claim();
 });
 
-// App shell: Network first with offline cache fallback; external APIs bypass SW cache
-self.addEventListener('fetch', e => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
 
-  const url = new URL(req.url);
-  if (url.origin !== location.origin || API_ORIGINS.includes(url.origin)) {
-    return;
-  }
-
-  e.respondWith(
-    fetch(req)
-      .then(res => {
-        if (res && res.status === 200) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(req, copy));
-        }
-        return res;
+  // Only cache same-origin app shell assets; let API calls go to network with fallback
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const networkFetch = fetch(event.request)
+          .then((res) => {
+            if (res && res.ok) {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return res;
+          })
+          .catch(() => cached);
+        return cached || networkFetch;
       })
-      .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
-  );
+    );
+  }
 });

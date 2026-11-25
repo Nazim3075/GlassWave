@@ -1,1705 +1,510 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
-  <meta name="theme-color" content="#07070c" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="manifest.json" />
-  <title>GlassWave</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GlassWave Music</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <meta name="theme-color" content="#0d0b14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
     :root {
-      --bg: #07070c;
-      --glass: rgba(255,255,255,0.06);
-      --glass2: rgba(255,255,255,0.1);
-      --border: rgba(255,255,255,0.11);
-      --text: #f0f0f5;
-      --muted: #8b8b9a;
-      --accent: #8b7cff;
-      --pink: #ec4899;
-      --glow: rgba(139,124,255,0.4);
-      --radius: 16px;
-      --safe: env(safe-area-inset-bottom, 0px);
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { height:100%; }
-    body {
-      font-family: Inter, system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-      background-image:
-        radial-gradient(ellipse 80% 50% at 15% 20%, rgba(139,124,255,0.16), transparent 55%),
-        radial-gradient(ellipse 60% 40% at 85% 75%, rgba(236,72,153,0.1), transparent 50%);
-      background-attachment: fixed;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .glass {
-      background: var(--glass);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-    }
-    .app {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 12px 12px calc(160px + var(--safe));
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      min-height: 100%;
+      --bg: #0b0912;
+      --surface: #151122;
+      --surface-2: #1e1830;
+      --accent: #a855f7;
+      --accent-2: #ec4899;
+      --text: #f5f3ff;
+      --muted: #9b92b5;
+      --border: rgba(255, 255, 255, 0.08);
     }
 
-    /* Header */
-    header {
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Bengali", sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #app {
+      max-width: 540px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 155px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 8px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(11, 9, 18, 0.88);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
     }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 1.15rem;
-      letter-spacing: -0.03em;
-    }
-    .logo-icon {
-      width: 34px; height: 34px;
-      background: linear-gradient(135deg, #8b7cff, #ec4899);
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
       border-radius: 10px;
-      display: grid; place-items: center;
-      box-shadow: 0 0 18px var(--glow);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(168, 85, 247, 0.35);
     }
-    .logo-icon svg { width: 16px; height: 16px; fill: #fff; }
-    .search-wrap { flex: 1; min-width: 140px; position: relative; }
-    .search-wrap input {
-      width: 100%;
-      padding: 11px 14px 11px 40px;
-      background: var(--glass);
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pill-btn, .icon-btn, .speed-pill {
+      background: var(--surface);
+      color: var(--text);
       border: 1px solid var(--border);
       border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn.small {
+      width: 30px;
+      height: 30px;
+      font-size: 14px;
+    }
+
+    .icon-btn.fav-active {
+      color: #fb7185;
+      border-color: rgba(251, 113, 133, 0.4);
+    }
+
+    .speed-strip {
+      padding: 4px 16px 10px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 0 16px;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .search-box input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 15px;
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 15px;
       outline: none;
     }
-    .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
-    .search-wrap input::placeholder { color: var(--muted); }
-    .search-icon {
-      position: absolute; left: 13px; top: 50%;
-      transform: translateY(-50%); color: var(--muted); pointer-events: none;
-    }
-    .icon-btn {
-      width: 38px; height: 38px;
-      border-radius: 11px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      color: var(--text);
-      display: grid; place-items: center;
-      cursor: pointer;
-    }
-    .icon-btn.active, .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* Tabs */
-    .tabs {
-      display: flex; gap: 5px;
-      overflow-x: auto; scrollbar-width: none;
+    .search-box input:focus {
+      border-color: var(--accent);
     }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab {
-      padding: 7px 14px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--muted);
+
+    .search-submit {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 0 18px;
+      font-weight: 700;
+      font-size: 14px;
       cursor: pointer;
-      white-space: nowrap;
     }
-    .tab.active {
-      background: rgba(139,124,255,0.18);
-      border-color: rgba(139,124,255,0.35);
-      color: #c4b5ff;
+
+    .quick-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .quick-chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .chip:hover {
+      color: var(--text);
+      border-color: var(--accent);
     }
 
     .section-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
       color: var(--muted);
-      margin-bottom: 8px;
-      padding-left: 2px;
+      margin: 8px 0 10px;
+      text-transform: uppercase;
+    }
+
+    .status-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 54px 16px;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 40px;
+      opacity: 0.45;
+      margin-bottom: 10px;
+    }
+
+    .empty-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .empty-sub {
+      font-size: 13px;
+      color: var(--muted);
     }
 
     .track-list {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      max-height: 52vh;
-      overflow-y: auto;
-      padding: 8px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.12) transparent;
+      gap: 8px;
     }
+
     .track-card {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
-      border-radius: 12px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: .15s;
-    }
-    .track-card:hover { background: var(--glass2); }
-    .track-card.active {
-      background: rgba(139,124,255,0.15);
-      border-color: rgba(139,124,255,0.28);
-    }
-    .track-art {
-      width: 44px; height: 44px;
-      border-radius: 8px;
-      object-fit: cover;
-      background: #14141e;
-      flex-shrink: 0;
-    }
-    .track-info { flex: 1; min-width: 0; }
-    .track-title {
-      font-weight: 500; font-size: 0.88rem;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .track-artist {
-      font-size: 0.74rem; color: var(--muted); margin-top: 1px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .track-actions { display: flex; gap: 2px; }
-    .mini {
-      width: 30px; height: 30px;
-      border-radius: 8px;
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      display: grid; place-items: center;
-      cursor: pointer;
-    }
-    .mini:hover { color: var(--text); background: rgba(255,255,255,0.07); }
-    .mini.fav.active { color: #f472b6; }
-    .track-duration {
-      font-size: 0.72rem; color: var(--muted);
-      font-variant-numeric: tabular-nums; min-width: 34px; text-align: right;
-    }
-
-    /* Now panel */
-    .now-panel {
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       gap: 12px;
-    }
-    .now-art {
-      width: 180px; height: 180px;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 14px;
-      object-fit: cover;
-      box-shadow: 0 14px 32px rgba(0,0,0,0.45);
-      background: #14141e;
+      padding: 9px 11px;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.15s ease;
     }
-    .now-title { font-size: 1rem; font-weight: 600; text-align: center; }
-    .now-artist { font-size: 0.82rem; color: var(--muted); text-align: center; margin-top: -6px; }
-    .now-actions { display: flex; gap: 8px; }
 
-    .empty {
-      text-align: center;
-      padding: 40px 12px;
+    .track-card:active {
+      transform: scale(0.99);
+    }
+
+    .track-card.active {
+      border-color: var(--accent);
+      background: var(--surface-2);
+    }
+
+    .track-cover {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--surface-2);
+    }
+
+    .track-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .track-title {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .track-sub {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .track-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .track-dur {
+      font-size: 12px;
       color: var(--muted);
     }
-    .empty svg { width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.35; }
 
-    .status { font-size: 0.78rem; color: var(--muted); padding: 2px; min-height: 1.3em; }
-
-    /* Player bar */
-    .player {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      padding: 10px 14px calc(10px + var(--safe));
-      background: rgba(7,7,12,0.88);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border-top: 1px solid var(--border);
-      z-index: 100;
+    .player-bar {
       display: none;
-      flex-direction: column;
-      gap: 6px;
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 70px;
+      width: calc(100% - 24px);
+      max-width: 516px;
+      background: rgba(24, 19, 41, 0.96);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: 18px;
+      padding: 10px 12px;
+      z-index: 30;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
     }
-    .player.show { display: flex; }
+
+    .player-bar.visible {
+      display: block;
+    }
+
     .player-top {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .player-track {
-      display: flex; align-items: center; gap: 10px;
-      flex: 1; min-width: 0;
-    }
-    .player-art {
-      width: 42px; height: 42px;
-      border-radius: 8px;
+
+    .player-thumb {
+      width: 42px;
+      height: 42px;
+      border-radius: 9px;
       object-fit: cover;
-      background: #14141e;
-      flex-shrink: 0;
-    }
-    .player-meta { min-width: 0; }
-    .player-meta .t {
-      font-size: 0.86rem; font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .player-meta .a { font-size: 0.7rem; color: var(--muted); }
-    .controls { display: flex; align-items: center; gap: 4px; }
-    .ctrl {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: none; border: none;
-      color: var(--text);
-      display: grid; place-items: center;
-      cursor: pointer;
-    }
-    .ctrl:hover { background: rgba(255,255,255,0.08); }
-    .ctrl.play {
-      width: 42px; height: 42px;
-      background: var(--accent);
-      box-shadow: 0 0 16px var(--glow);
-    }
-    .ctrl.active { color: var(--accent); }
-    .progress-row {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.68rem; color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .bar {
-      flex: 1; height: 4px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 99px; cursor: pointer; overflow: hidden;
-    }
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--pink));
-      border-radius: 99px; width: 0%;
-    }
-    .vol-wrap {
-      display: none; align-items: center; gap: 5px;
-    }
-    @media (min-width: 640px) {
-      .vol-wrap { display: flex; }
-    }
-    .vol-bar {
-      width: 64px; height: 4px;
-      background: rgba(255,255,255,0.12);
-      border-radius: 99px; cursor: pointer;
-    }
-    .vol-fill {
-      height: 100%; background: var(--muted);
-      border-radius: 99px; width: 80%;
     }
 
-    /* Fullscreen player sheet */
-    .fs-player {
-      position: fixed; inset: 0;
-      background: #0a0a12;
-      z-index: 200;
-      display: none;
-      flex-direction: column;
-      padding: 20px 20px calc(20px + var(--safe));
-      overflow-y: auto;
-    }
-    .fs-player.open { display: flex; }
-    .fs-close {
-      align-self: flex-start;
-      background: none; border: none;
-      color: var(--muted); font-size: 1.5rem; cursor: pointer;
-      margin-bottom: 10px;
-    }
-    .fs-art {
-      width: min(280px, 70vw);
-      height: min(280px, 70vw);
-      border-radius: 18px;
-      object-fit: cover;
-      margin: 10px auto 20px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      background: #14141e;
-    }
-    .fs-title { font-size: 1.25rem; font-weight: 700; text-align: center; }
-    .fs-artist { font-size: 0.95rem; color: var(--muted); text-align: center; margin: 4px 0 18px; }
-    .fs-controls {
-      display: flex; justify-content: center; align-items: center;
-      gap: 18px; margin: 16px 0;
-    }
-    .fs-controls .ctrl { width: 44px; height: 44px; }
-    .fs-controls .ctrl.play { width: 64px; height: 64px; }
-    .fs-progress { margin: 8px 0 16px; }
-    .fs-extra {
-      display: flex; justify-content: center; flex-wrap: wrap;
-      gap: 10px; margin-top: 8px;
-    }
-    .chip {
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 0.8rem;
-      cursor: pointer;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .chip.active { border-color: var(--accent); color: var(--accent); background: rgba(139,124,255,0.12); }
-
-    /* Modals */
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(6px);
-      z-index: 180;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    .overlay.open { display: flex; }
-    .sheet {
-      width: 100%; max-width: 440px;
-      max-height: 82vh;
-      background: #111118;
-      border: 1px solid var(--border);
-      border-radius: 20px 20px 0 0;
-      padding: 16px;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    .sheet h3 {
-      font-size: 1rem; margin-bottom: 12px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .sheet .x {
-      background: none; border: none;
-      color: var(--muted); font-size: 1.4rem; cursor: pointer;
-    }
-    .sheet-body { overflow-y: auto; flex: 1; }
-
-    .quality-list { display: flex; flex-direction: column; gap: 8px; }
-    .q-item {
-      padding: 14px 16px;
-      border-radius: 12px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .q-item:hover, .q-item.selected {
-      border-color: var(--accent);
-      background: rgba(139,124,255,0.12);
-    }
-    .q-item .badge {
-      font-size: 0.7rem;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: rgba(139,124,255,0.25);
-      color: #c4b5ff;
+    .player-info {
+      flex: 1;
+      min-width: 0;
     }
 
-    .cfg-group { margin-bottom: 12px; }
-    .cfg-group label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-    .cfg-group input, .cfg-group select {
-      width: 100%; padding: 10px 12px; border-radius: 10px;
-      background: rgba(255,255,255,0.07); border: 1px solid var(--border);
-      color: var(--text); font-size: 0.85rem; outline: none;
-    }
-    .cfg-group input:focus, .cfg-group select:focus { border-color: var(--accent); }
-    .cfg-group select option { background: #14141e; color: #f0f0f5; }
-
-    .toast {
-      position: fixed;
-      bottom: calc(130px + var(--safe));
-      left: 50%;
-      transform: translateX(-50%) translateY(16px);
-      background: rgba(20,20,32,0.95);
-      border: 1px solid var(--border);
-      padding: 10px 16px;
-      border-radius: 12px;
-      font-size: 0.84rem;
-      opacity: 0;
-      pointer-events: none;
-      transition: .28s;
-      z-index: 300;
+    .player-title {
+      font-size: 13px;
+      font-weight: 700;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .loader {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.15);
+    .player-artist {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ctrl-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .ctrl-btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none;
+      color: #fff;
+    }
+
+    .player-seek {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .player-seek input {
+      flex: 1;
+      accent-color: var(--accent);
+      height: 4px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 8px;
+      width: calc(100% - 24px);
+      max-width: 516px;
+      background: rgba(20, 16, 34, 0.94);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 6px;
+      z-index: 25;
+    }
+
+    .nav-item {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 4px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      background: rgba(168, 85, 247, 0.2);
+      color: var(--text);
+    }
+
+    .loading-box {
+      display: flex;
+      justify-content: center;
+      padding: 36px 0;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
       border-top-color: var(--accent);
       border-radius: 50%;
-      animation: spin .6s linear infinite;
-      display: inline-block;
+      animation: spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .main { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    @media (min-width: 820px) {
-      .main { grid-template-columns: 1fr 280px; }
-      .now-panel { position: sticky; top: 14px; }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .setting-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .setting-row label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .setting-row select {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
     }
   </style>
-
-  <style>
-    /* ===== GlassWave 2.0 — modern layer ===== */
-    :root{--accent:#a78bfa;--accent2:#f472b6;--ease:cubic-bezier(.2,.8,.2,1)}
-    body{font-family:"SF Pro Display",Inter,system-ui,-apple-system,"Noto Sans Bengali",sans-serif}
-    .aurora{position:fixed;inset:-20%;z-index:-1;background:var(--art,none) center/cover;filter:blur(90px) saturate(1.7);opacity:0;transform:scale(1.2);transition:opacity 1.2s var(--ease)}
-    .aurora.on{opacity:.38}
-    .logo{font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#c4b5fd 60%,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-right:auto}
-    .search-wrap{flex:1 1 100%;order:3}
-    .search-wrap input{width:100%;height:46px;border-radius:999px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:.95rem;transition:.25s var(--ease)}
-    .search-wrap input:focus{background:rgba(255,255,255,.14);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent);outline:none}
-    .glass{background:rgba(255,255,255,.07);box-shadow:0 8px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.12)}
-    #home{display:none}
-    body.home-on #home{display:block}
-    body.home-on #empty,body.home-on .section-label,body.home-on #status{display:none!important}
-    #greet{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;margin:4px 2px 14px}
-    .h2{font-size:1.05rem;font-weight:700;margin:20px 2px 10px}
-    .rail{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
-    .rail::-webkit-scrollbar{display:none}
-    .rc{flex:0 0 132px;cursor:pointer;transition:transform .25s var(--ease)}
-    .rc:active{transform:scale(.96)}
-    .rc img{width:132px;height:132px;border-radius:16px;object-fit:cover;background:#14141e;box-shadow:0 10px 24px rgba(0,0,0,.4)}
-    .rc b,.rc span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .rc b{font-size:.83rem;margin-top:8px;font-weight:600}
-    .rc span{font-size:.72rem;color:var(--muted);margin-top:1px}
-    .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-    .tile{height:78px;border-radius:18px;border:1px solid rgba(255,255,255,.16);color:#fff;font-weight:700;font-size:.95rem;text-align:left;padding:14px;cursor:pointer;background:linear-gradient(135deg,hsl(var(--h) 75% 48% / .85),hsl(calc(var(--h) + 45) 70% 28% / .85));box-shadow:inset 0 1px 0 rgba(255,255,255,.25);transition:transform .25s var(--ease)}
-    .tile:active{transform:scale(.97)}
-    .track-list{max-height:none;background:none;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;gap:2px}
-    .track-card{padding:8px;border-radius:16px;gap:12px}
-    .track-art{width:54px;height:54px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
-    .track-title{font-size:.95rem;font-weight:600}
-    .track-card.active{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
-    .track-card.active .track-title{color:#ddd6fe}
-    .eq{display:flex;align-items:flex-end;gap:2px;height:14px;width:14px;flex:none}
-    .eq b{flex:1;background:var(--accent);border-radius:2px;animation:eq 1s ease-in-out infinite}
-    .eq b:nth-child(2){animation-delay:.25s}.eq b:nth-child(3){animation-delay:.5s}
-    body:not(.is-playing) .eq b{animation-play-state:paused}
-    @keyframes eq{0%,100%{height:25%}50%{height:100%}}
-    .player{left:10px;right:10px;bottom:calc(78px + var(--safe));padding:10px 12px;border-radius:24px;border:1px solid rgba(255,255,255,.16);background:rgba(28,26,44,.55);box-shadow:0 12px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.14);backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6)}
-    .player-art{width:46px;height:46px;border-radius:12px}
-    .ctrl{display:grid;place-items:center;transition:transform .2s var(--ease),color .2s}
-    .ctrl:active{transform:scale(.88)}
-    .ctrl svg{width:20px;height:20px;fill:currentColor}
-    .ctrl.play{background:#fff;color:#0a0a12;border:none;box-shadow:0 6px 20px rgba(255,255,255,.25)}
-    .ctrl.play svg{width:24px;height:24px}
-    .ctrl.active{color:var(--accent)}
-    .bar{height:5px;border-radius:9px;background:rgba(255,255,255,.16)}
-    .bar-fill{background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:9px}
-    .tabs{position:fixed;left:10px;right:10px;bottom:calc(10px + var(--safe));z-index:101;padding:6px;border-radius:26px;background:rgba(28,26,44,.6);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
-    .tab{flex:1;text-align:center;padding:11px 0;font-size:.82rem;font-weight:600}
-    .tab.active{background:color-mix(in srgb,var(--accent) 30%,transparent);border-color:transparent;color:#fff}
-    .now-panel{display:none}
-    .fs-player{background:#07070c;overflow:hidden auto}
-    .fs-player::before{content:"";position:fixed;inset:-30%;background:var(--art,none) center/cover;filter:blur(80px) saturate(1.8) brightness(.6);z-index:0}
-    .fs-player>*{position:relative;z-index:1}
-    .fs-art{width:min(340px,80vw);height:min(340px,80vw);border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.6);transition:transform .6s var(--ease)}
-    body:not(.is-playing) .fs-art{transform:scale(.86)}
-    .fs-title{font-size:1.5rem;letter-spacing:-.02em}
-    .chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:999px}
-    .chip.active{background:color-mix(in srgb,var(--accent2) 25%,transparent);color:#fbcfe8}
-    .sheet{border-radius:28px 28px 0 0;background:rgba(24,22,38,.88);backdrop-filter:blur(36px) saturate(1.6);-webkit-backdrop-filter:blur(36px) saturate(1.6);border:1px solid rgba(255,255,255,.14)}
-    .toast{backdrop-filter:blur(20px);border-radius:999px}
-    @media(min-width:900px){
-      .main{grid-template-columns:1fr 300px}.now-panel{display:flex}
-      .app{padding-top:24px}.search-wrap{flex:1 1 auto;order:0;max-width:460px}.logo{margin-right:0}
-      .tabs{position:static;background:none;border:none;box-shadow:none;backdrop-filter:none;padding:0;justify-content:flex-start}
-      .tab{flex:none;padding:8px 18px}
-      .player{left:50%;right:auto;transform:translateX(-50%);bottom:calc(16px + var(--safe));width:min(920px,calc(100% - 32px))}
-      .tiles{grid-template-columns:repeat(5,1fr)}
-    }
-  
-    .progress-row span,.track-duration{font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.03em}
-    .is-playing .player{border-color:color-mix(in srgb,var(--accent) 60%,transparent);box-shadow:0 0 30px color-mix(in srgb,var(--accent) 35%,transparent),0 12px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.14)}
-    #vis{width:min(340px,80vw);height:60px;align-self:center;margin:-6px 0 10px}
-    .mi{display:flex;gap:12px;align-items:center;padding:14px 8px;border-radius:14px;cursor:pointer;font-weight:500;font-size:.95rem}
-    .mi:hover,.mi:active{background:rgba(255,255,255,.09)}
-    .mi i{font-style:normal;width:24px;text-align:center}
-    body.pl-on #list,body.pl-on .section-label{display:none}
-    #plView:empty{display:none}
-    .plnew,.plbar button{height:44px;padding:0 16px;border-radius:14px;border:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent);color:#fff;font-weight:600;cursor:pointer}
-    .plnew{width:100%;margin-bottom:12px}
-    .plc{display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
-    .plc .cv{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:1.3rem;overflow:hidden}
-    .plc .cv img{width:100%;height:100%;object-fit:cover}
-    .plc div.n{flex:1;min-width:0;font-weight:600}.plc small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
-    .plbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}.plbar b{flex:1;font-size:1.1rem}.plbar button{border-style:solid;height:38px;padding:0 12px}
-    .qs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 4px}
-    .qs button{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#fff;font-size:.8rem;cursor:pointer}
-    #btnTheme{font-size:1rem}
-</style>
 </head>
 <body>
-  <div class="aurora" id="aurora"></div>
-  <div class="app">
-    <header>
-      <div class="logo">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-        </div>
-        GlassWave
-      </div>
-      <div class="search-wrap">
-        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input type="search" id="q" placeholder="গান / আর্টিস্ট সার্চ..." autocomplete="off" />
-      </div>
-      <button class="icon-btn" id="btnApi" title="API / Provider Settings" style="font-size:1rem">⚙</button>
-      <button class="icon-btn" id="btnLang" title="Language / ভাষা" style="font-size:.78rem;font-weight:700">EN</button>
-      <button class="icon-btn" id="btnTheme" title="Theme">🎨</button>
-      <button class="icon-btn" id="btnSleep" title="Sleep Timer">⏱</button>
-      <button class="icon-btn" id="btnSpeed" title="Speed">1x</button>
-    </header>
-
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-v="search">সার্চ</button>
-      <button class="tab" data-v="recent">রিসেন্ট</button>
-      <button class="tab" data-v="fav">ফেভারিট</button>
-      <button class="tab" data-v="pl">প্লেলিস্ট</button>
-      <button class="tab" data-v="queue">কিউ</button>
-    </div>
-
-    <div class="main">
-      <section>
-        <div id="home">
-          <div id="greet"></div>
-          <div id="railWrap"><div class="h2">সম্প্রতি শুনেছ</div><div class="rail" id="rail"></div></div>
-          <div class="h2">ব্রাউজ করো</div>
-          <div class="tiles" id="tiles"></div>
-        </div>
-        <div class="section-label" id="label">সার্চ রেজাল্ট</div>
-        <div id="plView"></div>
-        <div class="track-list glass" id="list">
-          <div class="empty" id="empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-              <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-            </svg>
-            <p>সার্চ করে গান খুঁজে নাও</p>
-            <p id="apiSubtitle" style="font-size:0.75rem;margin-top:6px;opacity:.6">Lossless · tracks.monochrome.st</p>
-          </div>
-        </div>
-        <div class="status" id="status"></div>
-      </section>
-
-      <aside class="now-panel glass" id="side">
-        <img class="now-art" id="sideArt" style="display:none" alt="" />
-        <div class="empty" id="sideEmpty" style="padding:28px 6px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:42px;height:42px">
-            <circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/>
-          </svg>
-          <p>কোনো গান বাজছে না</p>
-        </div>
-        <div id="sideMeta" style="display:none;width:100%;text-align:center">
-          <div class="now-title" id="sideTitle">—</div>
-          <div class="now-artist" id="sideArtist">—</div>
-          <div class="now-actions">
-            <button class="icon-btn" id="btnFavSide" title="Favorite">♥</button>
-            <button class="icon-btn" id="btnDlSide" title="Download">↓</button>
-            <button class="icon-btn" id="btnLyricsSide" title="Lyrics">🎤</button>
-            <button class="icon-btn" id="btnInfoSide" title="Track Info">ℹ</button>
-            <button class="icon-btn" id="btnExpand" title="Expand">⛶</button>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- Mini Player -->
-  <div class="player" id="player">
-    <div class="player-top">
-      <div class="player-track" id="openFs">
-        <img class="player-art" id="pArt" alt="" />
-        <div class="player-meta">
-          <div class="t" id="pTitle">—</div>
-          <div class="a" id="pArtist">—</div>
-        </div>
-      </div>
-      <div class="controls">
-        <button class="ctrl" id="btnShuf" title="Shuffle">⇄</button>
-        <button class="ctrl" id="btnPrev">⏮</button>
-        <button class="ctrl play" id="btnPlay">▶</button>
-        <button class="ctrl" id="btnNext">⏭</button>
-        <button class="ctrl" id="btnRep" title="Repeat">🔁</button>
-      </div>
-      <div class="vol-wrap">
-        <span style="font-size:0.7rem;opacity:.7">🔊</span>
-        <div class="vol-bar" id="volBar"><div class="vol-fill" id="volFill"></div></div>
-      </div>
-    </div>
-    <div class="progress-row">
-      <span id="tCur">0:00</span>
-      <div class="bar" id="prog"><div class="bar-fill" id="fill"></div></div>
-      <span id="tTot">0:00</span>
-    </div>
-  </div>
-
-  <!-- Fullscreen Player -->
-  <div class="fs-player" id="fs">
-    <button class="fs-close" id="fsClose">✕</button>
-    <img class="fs-art" id="fsArt" alt="" />
-    <canvas id="vis" width="360" height="60"></canvas>
-    <div class="fs-title" id="fsTitle">—</div>
-    <div class="fs-artist" id="fsArtist">—</div>
-    <div class="fs-progress">
-      <div class="progress-row">
-        <span id="fsCur">0:00</span>
-        <div class="bar" id="fsProg"><div class="bar-fill" id="fsFill"></div></div>
-        <span id="fsTot">0:00</span>
-      </div>
-    </div>
-    <div class="fs-controls">
-      <button class="ctrl" id="fsShuf">⇄</button>
-      <button class="ctrl" id="fsPrev">⏮</button>
-      <button class="ctrl play" id="fsPlay">▶</button>
-      <button class="ctrl" id="fsNext">⏭</button>
-      <button class="ctrl" id="fsRep">🔁</button>
-    </div>
-    <div class="fs-extra">
-      <button class="chip" id="fsFav">♥ Favorite</button>
-      <button class="chip" id="fsDl">↓ Download</button>
-      <button class="chip" id="fsLyrics">🎤 Lyrics</button>
-      <button class="chip" id="fsInfo">ℹ Track Info</button>
-      <button class="chip" id="fsQuality">♪ Quality</button>
-      <button class="chip" id="fsQueue">☰ Queue</button>
-      <button class="chip" id="fsSpeed">1x Speed</button>
-      <button class="chip" id="fsSleep">⏱ Sleep</button>
-    </div>
-  </div>
-
-  <!-- API / Provider Configuration Sheet -->
-  <div class="overlay" id="apiOverlay">
-    <div class="sheet">
-      <h3>API ও প্রোভাইডার কনফিগারেশন <button class="x" id="apiClose">×</button></h3>
-      <div class="sheet-body">
-        <div class="cfg-group">
-          <label>QOBUZ_ID_SECRET (generate with: openssl rand -hex 32)</label>
-          <div style="display:flex;gap:6px">
-            <input type="text" id="cfgSecret" placeholder="64-character hex secret" />
-            <button class="chip" id="btnGenSecret" type="button" style="white-space:nowrap">Generate</button>
-          </div>
-        </div>
-        <div class="cfg-group">
-          <label>QOBUZ_PROVIDER</label>
-          <select id="cfgProvider">
-            <option value="multi">multi (Default)</option>
-            <option value="qobuzdl">qobuzdl</option>
-            <option value="http">http</option>
-            <option value="stub">stub</option>
-          </select>
-        </div>
-        <div class="cfg-group">
-          <label>Active Endpoint Preset</label>
-          <select id="cfgPreset">
-            <option value="MONOCHROME_BASE_URL">MONOCHROME_BASE_URL (tracks.monochrome.st)</option>
-            <option value="QOBUZ_UPSTREAM_BASE_URL">QOBUZ_UPSTREAM_BASE_URL (qobuz-dll.foreyou.workers.dev)</option>
-            <option value="LASTBABE_BASE_URL">LASTBABE_BASE_URL (lastbabe.velixir.run)</option>
-            <option value="DEEZER_BASE_URL">DEEZER_BASE_URL (dzr.tabs-vs-spaces.wtf)</option>
-            <option value="ELJOHNZC_BASE_URL">ELJOHNZC_BASE_URL (eljohnzc-addon)</option>
-            <option value="INSTABLE_BASE_URL">INSTABLE_BASE_URL (instable.arcod.xyz)</option>
-          </select>
-        </div>
-        <div class="cfg-group">
-          <label>QOBUZ_UPSTREAM_BASE_URL</label>
-          <input type="url" id="cfgQobuzUpstream" />
-        </div>
-        <div class="cfg-group">
-          <label>LASTBABE_BASE_URL</label>
-          <input type="url" id="cfgLastbabe" />
-        </div>
-        <div class="cfg-group">
-          <label>MONOCHROME_BASE_URL</label>
-          <input type="url" id="cfgMonochrome" />
-        </div>
-        <div class="cfg-group">
-          <label>DEEZER_BASE_URL</label>
-          <input type="url" id="cfgDeezer" />
-        </div>
-        <div class="cfg-group">
-          <label>ELJOHNZC_BASE_URL</label>
-          <input type="url" id="cfgEljohnzc" />
-        </div>
-        <div class="cfg-group">
-          <label>INSTABLE_BASE_URL</label>
-          <input type="url" id="cfgInstable" />
-        </div>
-        <div style="display:flex;gap:8px;margin-top:14px">
-          <button class="chip" id="cfgReset" type="button" style="flex:1;justify-content:center;padding:11px">রিসেট</button>
-          <button class="chip" id="cfgSave" type="button" style="flex:2;justify-content:center;padding:11px;background:var(--accent);border:none;color:#fff;font-weight:600">সেভ করুন</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="menuOverlay">
-    <div class="sheet"><h3><span id="menuTitle">অপশন</span> <button class="x" id="menuClose">×</button></h3><div class="sheet-body" id="menuBody"></div></div>
-  </div>
-
-  <!-- Lyrics Sheet -->
-  <div class="overlay" id="lyricsOverlay">
-    <div class="sheet" style="max-height:85vh">
-      <h3>Lyrics <button class="x" id="lyricsClose">×</button></h3>
-      <div class="sheet-body" id="lyricsBody" style="font-size:0.95rem;line-height:1.85;white-space:pre-wrap;text-align:center;padding:8px 4px 24px"></div>
-    </div>
-  </div>
-
-  <!-- Track Info Sheet -->
-  <div class="overlay" id="infoOverlay">
-    <div class="sheet">
-      <h3>Track Info <button class="x" id="infoClose">×</button></h3>
-      <div class="sheet-body" id="infoBody" style="font-size:0.88rem;line-height:1.7"></div>
-    </div>
-  </div>
-
-  <!-- Stream Quality Sheet -->
-  <div class="overlay" id="sqOverlay">
-    <div class="sheet">
-      <h3>Stream Quality <button class="x" id="sqClose">×</button></h3>
-      <div class="sheet-body">
-        <div class="quality-list" id="sqList">
-          <div class="q-item selected" data-q="LOSSLESS">
-            <div>
-              <div style="font-weight:600">FLAC Lossless</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">সেরা কোয়ালিটি</div>
-            </div>
-            <span class="badge">Best</span>
-          </div>
-          <div class="q-item" data-q="HIGH">
-            <div>
-              <div style="font-weight:600">High</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">উচ্চ কোয়ালিটি</div>
-            </div>
-          </div>
-          <div class="q-item" data-q="LOW">
-            <div>
-              <div style="font-weight:600">Normal</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">সাশ্রয়ী ব্যান্ডউইথ</div>
-            </div>
-          </div>
-        </div>
-        <p style="font-size:0.75rem;color:var(--muted);margin-top:12px;text-align:center">
-          নোট: এই API মূলত Lossless FLAC দেয়। অন্য কোয়ালিটি সবসময় আলাদা নাও হতে পারে।
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Download Quality Sheet -->
-  <div class="overlay" id="dlOverlay">
-    <div class="sheet">
-      <h3>ডাউনলোড কোয়ালিটি <button class="x" id="dlClose">×</button></h3>
-      <div class="sheet-body">
-        <div class="quality-list" id="qList">
-          <div class="q-item selected" data-q="LOSSLESS">
-            <div>
-              <div style="font-weight:600">FLAC Lossless</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">সেরা কোয়ালিটি · বড় ফাইল</div>
-            </div>
-            <span class="badge">Recommended</span>
-          </div>
-          <div class="q-item" data-q="HIGH">
-            <div>
-              <div style="font-weight:600">High (≈320kbps)</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">ভালো কোয়ালিটি · মাঝারি সাইজ</div>
-            </div>
-          </div>
-          <div class="q-item" data-q="LOW">
-            <div>
-              <div style="font-weight:600">Normal</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">ছোট ফাইল · দ্রুত ডাউনলোড</div>
-            </div>
-          </div>
-        </div>
-        <button class="chip" id="dlConfirm" style="width:100%;justify-content:center;margin-top:14px;padding:12px;background:var(--accent);border:none;color:#fff;font-weight:600">
-          ডাউনলোড শুরু করো
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Queue / Sleep / Speed sheets -->
-  <div class="overlay" id="queueOverlay">
-    <div class="sheet">
-      <h3>Queue <button class="x" id="queueClose">×</button></h3>
-      <div class="sheet-body" id="queueBody"></div>
-    </div>
-  </div>
-
-  <div class="overlay" id="sleepOverlay">
-    <div class="sheet">
-      <h3>Sleep Timer <button class="x" id="sleepClose">×</button></h3>
-      <div class="sheet-body" style="display:flex;flex-wrap:wrap;gap:8px">
-        <button class="chip sleep-opt" data-m="5">5 মিনিট</button>
-        <button class="chip sleep-opt" data-m="15">15 মিনিট</button>
-        <button class="chip sleep-opt" data-m="30">30 মিনিট</button>
-        <button class="chip sleep-opt" data-m="45">45 মিনিট</button>
-        <button class="chip sleep-opt" data-m="60">1 ঘণ্টা</button>
-        <button class="chip sleep-opt" data-m="0">বন্ধ করো</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="speedOverlay">
-    <div class="sheet">
-      <h3>Playback Speed <button class="x" id="speedClose">×</button></h3>
-      <div class="sheet-body" style="display:flex;flex-wrap:wrap;gap:8px">
-        <button class="chip speed-opt" data-s="0.5">0.5x</button>
-        <button class="chip speed-opt" data-s="0.75">0.75x</button>
-        <button class="chip speed-opt selected" data-s="1">1x</button>
-        <button class="chip speed-opt" data-s="1.25">1.25x</button>
-        <button class="chip speed-opt" data-s="1.5">1.5x</button>
-        <button class="chip speed-opt" data-s="2">2x</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-  <audio id="audio" preload="metadata"></audio>
-
-  <script>
-    // Required & Optional Environment Configuration
-    window.ENV = {
-      // Required
-      QOBUZ_ID_SECRET: '', // generate with: openssl rand -hex 32
-
-      // Optional (defaults shown)
-      QOBUZ_PROVIDER: 'multi', // multi | qobuzdl | http | stub
-      QOBUZ_UPSTREAM_BASE_URL: 'https://qobuz-dll.foreyou.workers.dev',
-      LASTBABE_BASE_URL: 'https://lastbabe.velixir.run',
-      MONOCHROME_BASE_URL: 'https://tracks.monochrome.st',
-      DEEZER_BASE_URL: 'https://dzr.tabs-vs-spaces.wtf',
-      ELJOHNZC_BASE_URL: 'https://eljohnzc-addon.de.deplexo.com/4433c7caff7fd070309e',
-      INSTABLE_BASE_URL: 'https://instable.arcod.xyz'
-    };
-
-    const savedEnv = JSON.parse(localStorage.getItem('gw_env_cfg') || '{}');
-    let ENV = Object.assign({}, window.ENV, savedEnv);
-    let activeKey = localStorage.getItem('gw_active_key') || 'MONOCHROME_BASE_URL';
-    let API = (ENV[activeKey] || ENV.MONOCHROME_BASE_URL).replace(/\/+$/, '');
-
-    const $ = id => document.getElementById(id);
-    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const fmt = ms => { if(!ms) return '0:00'; const s=Math.floor(ms/1000); return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; };
-    const fmtS = s => { if(!s||isNaN(s)) return '0:00'; return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; };
-    const tid = t => String(t.trackId || t.id);
-
-    function genHex32() {
-      const arr = new Uint8Array(32);
-      crypto.getRandomValues(arr);
-      return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function apiHeaders() {
-      const h = {
-        'X-Qobuz-Provider': ENV.QOBUZ_PROVIDER,
-        'X-Qobuz-Upstream-Base-Url': ENV.QOBUZ_UPSTREAM_BASE_URL,
-        'X-Lastbabe-Base-Url': ENV.LASTBABE_BASE_URL,
-        'X-Monochrome-Base-Url': ENV.MONOCHROME_BASE_URL,
-        'X-Deezer-Base-Url': ENV.DEEZER_BASE_URL,
-        'X-Eljohnzc-Base-Url': ENV.ELJOHNZC_BASE_URL,
-        'X-Instable-Base-Url': ENV.INSTABLE_BASE_URL
-      };
-      if (ENV.QOBUZ_ID_SECRET) {
-        h['X-Qobuz-Id-Secret'] = ENV.QOBUZ_ID_SECRET;
-        h['Authorization'] = `Bearer ${ENV.QOBUZ_ID_SECRET}`;
-      }
-      return h;
-    }
-
-    function updateApiSubtitle() {
-      const host = API.replace(/^https?:\/\//, '');
-      if ($('apiSubtitle')) $('apiSubtitle').textContent = `Lossless · ${host}`;
-    }
-    updateApiSubtitle();
-
-    // API Settings UI
-    $('btnApi').onclick = () => {
-      $('cfgSecret').value = ENV.QOBUZ_ID_SECRET || '';
-      $('cfgProvider').value = ENV.QOBUZ_PROVIDER || 'multi';
-      $('cfgPreset').value = activeKey;
-      $('cfgQobuzUpstream').value = ENV.QOBUZ_UPSTREAM_BASE_URL || '';
-      $('cfgLastbabe').value = ENV.LASTBABE_BASE_URL || '';
-      $('cfgMonochrome').value = ENV.MONOCHROME_BASE_URL || '';
-      $('cfgDeezer').value = ENV.DEEZER_BASE_URL || '';
-      $('cfgEljohnzc').value = ENV.ELJOHNZC_BASE_URL || '';
-      $('cfgInstable').value = ENV.INSTABLE_BASE_URL || '';
-      $('apiOverlay').classList.add('open');
-    };
-    $('btnGenSecret').onclick = () => {
-      $('cfgSecret').value = genHex32();
-      toast('নতুন 32-byte hex secret তৈরি হয়েছে');
-    };
-    $('apiClose').onclick = () => $('apiOverlay').classList.remove('open');
-    $('apiOverlay').onclick = e => { if (e.target === $('apiOverlay')) $('apiOverlay').classList.remove('open'); };
-    $('cfgSave').onclick = () => {
-      ENV.QOBUZ_ID_SECRET = $('cfgSecret').value.trim();
-      ENV.QOBUZ_PROVIDER = $('cfgProvider').value;
-      ENV.QOBUZ_UPSTREAM_BASE_URL = $('cfgQobuzUpstream').value.trim().replace(/\/+$/, '');
-      ENV.LASTBABE_BASE_URL = $('cfgLastbabe').value.trim().replace(/\/+$/, '');
-      ENV.MONOCHROME_BASE_URL = $('cfgMonochrome').value.trim().replace(/\/+$/, '');
-      ENV.DEEZER_BASE_URL = $('cfgDeezer').value.trim().replace(/\/+$/, '');
-      ENV.ELJOHNZC_BASE_URL = $('cfgEljohnzc').value.trim().replace(/\/+$/, '');
-      ENV.INSTABLE_BASE_URL = $('cfgInstable').value.trim().replace(/\/+$/, '');
-      activeKey = $('cfgPreset').value;
-      API = (ENV[activeKey] || ENV.MONOCHROME_BASE_URL).replace(/\/+$/, '');
-      window.ENV = ENV;
-      localStorage.setItem('gw_env_cfg', JSON.stringify(ENV));
-      localStorage.setItem('gw_active_key', activeKey);
-      updateApiSubtitle();
-      $('apiOverlay').classList.remove('open');
-      toast('কনফিগারেশন সেভ হয়েছে');
-    };
-    $('cfgReset').onclick = () => {
-      localStorage.removeItem('gw_env_cfg');
-      localStorage.removeItem('gw_active_key');
-      ENV = Object.assign({}, window.ENV, {
-        QOBUZ_ID_SECRET: '',
-        QOBUZ_PROVIDER: 'multi',
-        QOBUZ_UPSTREAM_BASE_URL: 'https://qobuz-dll.foreyou.workers.dev',
-        LASTBABE_BASE_URL: 'https://lastbabe.velixir.run',
-        MONOCHROME_BASE_URL: 'https://tracks.monochrome.st',
-        DEEZER_BASE_URL: 'https://dzr.tabs-vs-spaces.wtf',
-        ELJOHNZC_BASE_URL: 'https://eljohnzc-addon.de.deplexo.com/4433c7caff7fd070309e',
-        INSTABLE_BASE_URL: 'https://instable.arcod.xyz'
-      });
-      activeKey = 'MONOCHROME_BASE_URL';
-      API = ENV.MONOCHROME_BASE_URL;
-      $('btnApi').click();
-      updateApiSubtitle();
-      toast('ডিফল্ট সেটিংস রিসেট হয়েছে');
-    };
-
-    let view = 'search', results = [], queue = [], idx = -1;
-    let playing = false, shuffle = false, repeat = 0;
-    let speed = 1, sleepTimer = null, sleepMin = 0;
-    let streamQuality = 'LOSSLESS';
-    let favs = JSON.parse(localStorage.getItem('gw_fav')||'[]');
-    let recent = JSON.parse(localStorage.getItem('gw_rec')||'[]');
-    let dlTrack = null, dlQuality = 'LOSSLESS';
-
-    function toast(m) {
-      const t = $('toast'); t.textContent = m;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2200);
-    }
-    function saveFav(){ localStorage.setItem('gw_fav', JSON.stringify(favs)); }
-    function saveRec(){ localStorage.setItem('gw_rec', JSON.stringify(recent.slice(0,40))); }
-    function isFav(t){ return favs.some(f => tid(f)===tid(t)); }
-
-    function toggleFav(t){
-      const i = favs.findIndex(f => tid(f)===tid(t));
-      if(i>=0){ favs.splice(i,1); toast('ফেভারিট থেকে সরানো'); }
-      else { favs.unshift(t); toast('ফেভারিটে যোগ'); }
-      saveFav();
-      if(view==='fav') render();
-      updateFavUI(t);
-    }
-    function updateFavUI(t){
-      const on = isFav(t);
-      document.querySelectorAll('.mini.fav').forEach(b => {
-        if(b.dataset.id===tid(t)) b.classList.toggle('active', on);
-      });
-      $('btnFavSide')?.classList.toggle('active', queue[idx] && tid(queue[idx])===tid(t) && on);
-      $('fsFav')?.classList.toggle('active', on);
-    }
-    function addRecent(t){
-      recent = recent.filter(r => tid(r)!==tid(t));
-      recent.unshift(t);
-      if(recent.length>40) recent.pop();
-      saveRec();
-    }
-
-    // Search
-    let timer;
-    $('q').oninput = () => {
-      clearTimeout(timer);
-      const v = $('q').value.trim();
-      if(v.length<2) return;
-      timer = setTimeout(() => search(v), 360);
-    };
-    $('q').onkeydown = e => { if(e.key==='Enter'){ clearTimeout(timer); search($('q').value.trim()); } };
-
-    async function search(q){
-      if(!q) return;
-      view='search'; setTab('search');
-      $('status').innerHTML = '<span class="loader"></span> সার্চ...';
-      $('empty').style.display='none';
-      try {
-        const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}&provider=${encodeURIComponent(ENV.QOBUZ_PROVIDER)}`, {
-          headers: apiHeaders()
-        });
-        const d = await r.json();
-        results = d.tracks || [];
-        render();
-        $('status').textContent = results.length ? `${results.length} টি গান` : 'কিছু পাওয়া যায়নি';
-      } catch {
-        $('status').textContent = 'সার্চ ব্যর্থ';
-        results=[]; render();
-      }
-    }
-
-    function setTab(v){
-      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.v===v));
-    }
-    $('tabs').onclick = e => {
-      const b = e.target.closest('.tab'); if(!b) return;
-      view = b.dataset.v; setTab(view);
-      if(view==='queue'){ openQueue(); return; }
-      render();
-    };
-
-    function data(){
-      if(view==='search') return results;
-      if(view==='recent') return recent;
-      if(view==='fav') return favs;
-      return [];
-    }
-
-    function render(){
-      const arr = data();
-      const labels = {search:'সার্চ রেজাল্ট', recent:'রিসেন্ট', fav:'ফেভারিট'};
-      $('label').textContent = labels[view]||'লিস্ট';
-      $('list').querySelectorAll('.track-card').forEach(c=>c.remove());
-      if(!arr.length){
-        $('empty').style.display='block';
-        $('empty').querySelector('p').textContent =
-          view==='fav'?'কোনো ফেভারিট নেই': view==='recent'?'এখনো কিছু বাজাওনি':'সার্চ করে গান খুঁজে নাও';
-        return;
-      }
-      $('empty').style.display='none';
-      arr.forEach((t,i)=>{
-        const card = document.createElement('div');
-        const act = queue[idx] && tid(queue[idx])===tid(t);
-        card.className = 'track-card'+(act?' active':'');
-        card.innerHTML = `
-          <img class="track-art" src="${t.artwork||''}" loading="lazy"
-            onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22%3E%3Crect fill=%22%2314141e%22 width=%2280%22 height=%2280%22/%3E%3C/svg%3E'"/>
-          ${act?'<i class="eq"><b></b><b></b><b></b></i>':''}
-          <div class="track-info">
-            <div class="track-title">${esc(t.title)}</div>
-            <div class="track-artist">${esc((t.artistNames||[]).join(', '))}</div>
-          </div>
-          <div class="track-actions">
-            <button class="mini fav ${isFav(t)?'active':''}" data-id="${tid(t)}">♥</button>
-            <button class="mini dl">↓</button>
-          </div>
-          <div class="track-duration">${fmt(t.duration)}</div>`;
-        card.querySelector('.fav').onclick = e => { e.stopPropagation(); toggleFav(t); };
-        card.querySelector('.dl').onclick = e => { e.stopPropagation(); openDownload(t); };
-        card.onclick = () => { queue=[...arr]; play(i); };
-        $('list').appendChild(card);
-      });
-    }
-
-    // Playback
-    function play(i){
-      if(i<0||i>=queue.length) return;
-      idx=i; const t=queue[i];
-      addRecent(t);
-      updateNow(t);
-      $('player').classList.add('show');
-      const url = `${API}/track/${tid(t)}?quality=${streamQuality}&provider=${encodeURIComponent(ENV.QOBUZ_PROVIDER)}`;
-      audio.src = url;
-      audio.playbackRate = speed;
-      audio.play().then(()=>{ playing=true; syncPlayBtns(); setupMedia(t); }).catch(()=>toast('প্লে ব্যর্থ'));
-      render();
-    }
-    function updateNow(t){
-      $('sideEmpty').style.display='none';
-      $('sideArt').style.display='block';
-      $('sideMeta').style.display='block';
-      $('sideArt').src = t.artwork||'';
-      $('sideTitle').textContent = t.title||'—';
-      $('sideArtist').textContent = (t.artistNames||[]).join(', ')||'—';
-      $('pArt').src = t.artwork||'';
-      $('pTitle').textContent = t.title||'—';
-      $('pArtist').textContent = (t.artistNames||[]).join(', ')||'—';
-      $('fsArt').src = t.artwork||'';
-      $('fsTitle').textContent = t.title||'—';
-      $('fsArtist').textContent = (t.artistNames||[]).join(', ')||'—';
-      updateFavUI(t);
-    }
-    function syncPlayBtns(){
-      const icon = playing ? '⏸' : '▶';
-      $('btnPlay').textContent = icon;
-      $('fsPlay').textContent = icon;
-    }
-    function next(){
-      if(!queue.length) return;
-      if(repeat===2){ play(idx); return; }
-      let n = shuffle ? Math.floor(Math.random()*queue.length) : idx+1;
-      if(n>=queue.length){ if(repeat===1) n=0; else { playing=false; syncPlayBtns(); return; } }
-      play(n);
-    }
-    function prev(){
-      if(audio.currentTime>3){ audio.currentTime=0; return; }
-      if(idx>0) play(idx-1);
-    }
-
-    $('btnPlay').onclick = () => {
-      if(!audio.src) return;
-      if(playing){ audio.pause(); playing=false; } else { audio.play(); playing=true; }
-      syncPlayBtns();
-    };
-    $('fsPlay').onclick = $('btnPlay').onclick;
-    $('btnNext').onclick = next; $('fsNext').onclick = next;
-    $('btnPrev').onclick = prev; $('fsPrev').onclick = prev;
-    $('btnShuf').onclick = $('fsShuf').onclick = () => {
-      shuffle=!shuffle;
-      $('btnShuf').classList.toggle('active',shuffle);
-      $('fsShuf').classList.toggle('active',shuffle);
-      toast(shuffle?'Shuffle চালু':'Shuffle বন্ধ');
-    };
-    $('btnRep').onclick = $('fsRep').onclick = () => {
-      repeat=(repeat+1)%3;
-      $('btnRep').classList.toggle('active',repeat>0);
-      $('fsRep').classList.toggle('active',repeat>0);
-      toast(['Repeat বন্ধ','Repeat All','Repeat One'][repeat]);
-    };
-
-    // Progress
-    audio.ontimeupdate = () => {
-      if(!audio.duration) return;
-      const p = (audio.currentTime/audio.duration)*100;
-      $('fill').style.width = p+'%';
-      $('fsFill').style.width = p+'%';
-      $('tCur').textContent = fmtS(audio.currentTime);
-      $('tTot').textContent = fmtS(audio.duration);
-      $('fsCur').textContent = fmtS(audio.currentTime);
-      $('fsTot').textContent = fmtS(audio.duration);
-    };
-    audio.onended = next;
-    audio.onplay = ()=>{ playing=true; syncPlayBtns(); };
-    audio.onpause = ()=>{ playing=false; syncPlayBtns(); };
-
-    function seek(bar, e){
-      if(!audio.duration) return;
-      const r = bar.getBoundingClientRect();
-      audio.currentTime = ((e.clientX-r.left)/r.width)*audio.duration;
-    }
-    $('prog').onclick = e => seek($('prog'), e);
-    $('fsProg').onclick = e => seek($('fsProg'), e);
-
-    audio.volume = 0.85;
-    $('volBar').onclick = e => {
-      const r = $('volBar').getBoundingClientRect();
-      const v = Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
-      audio.volume = v;
-      $('volFill').style.width = (v*100)+'%';
-    };
-
-    // Fullscreen
-    $('openFs').onclick = () => { if(queue[idx]) $('fs').classList.add('open'); };
-    $('btnExpand').onclick = () => $('fs').classList.add('open');
-    $('fsClose').onclick = () => $('fs').classList.remove('open');
-
-    // Download
-    function openDownload(t){
-      dlTrack = t;
-      $('dlOverlay').classList.add('open');
-    }
-    $('dlClose').onclick = () => $('dlOverlay').classList.remove('open');
-    $('dlOverlay').onclick = e => { if(e.target===$('dlOverlay')) $('dlOverlay').classList.remove('open'); };
-    $('qList').onclick = e => {
-      const item = e.target.closest('.q-item'); if(!item) return;
-      document.querySelectorAll('.q-item').forEach(x=>x.classList.remove('selected'));
-      item.classList.add('selected');
-      dlQuality = item.dataset.q;
-    };
-    $('dlConfirm').onclick = () => {
-      if(!dlTrack) return;
-      const id = tid(dlTrack);
-      const url = `${API}/track/${id}?quality=${dlQuality}&provider=${encodeURIComponent(ENV.QOBUZ_PROVIDER)}`;
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${(dlTrack.artistNames||['Unknown'])[0]} - ${dlTrack.title||'track'}.flac`;
-      a.target = '_blank';
-      document.body.appendChild(a); a.click(); a.remove();
-      $('dlOverlay').classList.remove('open');
-      toast(`ডাউনলোড শুরু (${dlQuality})`);
-    };
-    $('btnDlSide').onclick = () => { if(queue[idx]) openDownload(queue[idx]); };
-    $('fsDl').onclick = () => { if(queue[idx]) openDownload(queue[idx]); };
-
-    // Track Info
-    function openInfo(t){
-      if(!t) return;
-      const dur = fmt(t.duration);
-      const artists = (t.artistNames||[]).join(', ') || '—';
-      const body = $('infoBody');
-      body.innerHTML = `
-        <div style="display:flex;gap:14px;margin-bottom:14px;align-items:center">
-          <img src="${t.artwork||''}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;background:#14141e"
-            onerror="this.style.display='none'"/>
-          <div>
-            <div style="font-weight:600;font-size:1rem">${esc(t.title)}</div>
-            <div style="color:var(--muted);font-size:0.85rem;margin-top:2px">${esc(artists)}</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:0.82rem">
-          <div><span style="color:var(--muted)">Duration</span><br><b>${dur}</b></div>
-          <div><span style="color:var(--muted)">Explicit</span><br><b>${t.explicit ? 'Yes' : 'No'}</b></div>
-          <div><span style="color:var(--muted)">Playable</span><br><b>${t.playable ? 'Yes' : 'No'}</b></div>
-          <div><span style="color:var(--muted)">Quality</span><br><b>${streamQuality}</b></div>
-          <div style="grid-column:1/-1"><span style="color:var(--muted)">ISRC</span><br><b style="word-break:break-all">${esc(t.isrc||'—')}</b></div>
-          <div style="grid-column:1/-1"><span style="color:var(--muted)">Track ID</span><br><b style="word-break:break-all;font-size:0.75rem">${esc(tid(t))}</b></div>
-          <div style="grid-column:1/-1"><span style="color:var(--muted)">Release ID</span><br><b style="word-break:break-all;font-size:0.75rem">${esc(t.releaseId||'—')}</b></div>
-          <div style="grid-column:1/-1"><span style="color:var(--muted)">Recording ID</span><br><b style="word-break:break-all;font-size:0.75rem">${esc(t.recordingId||'—')}</b></div>
-        </div>
-        <button class="chip" id="copyIsrc" style="width:100%;justify-content:center;margin-top:14px;padding:10px">
-          ISRC কপি করো
-        </button>
-      `;
-      $('infoOverlay').classList.add('open');
-      $('copyIsrc').onclick = () => {
-        if(t.isrc){ navigator.clipboard?.writeText(t.isrc); toast('ISRC কপি হয়েছে'); }
-        else toast('ISRC নেই');
-      };
-    }
-    $('fsInfo').onclick = () => { if(queue[idx]) openInfo(queue[idx]); };
-    $('btnInfoSide').onclick = () => { if(queue[idx]) openInfo(queue[idx]); };
-    $('infoClose').onclick = () => $('infoOverlay').classList.remove('open');
-    $('infoOverlay').onclick = e => { if(e.target===$('infoOverlay')) $('infoOverlay').classList.remove('open'); };
-
-    // Lyrics (via LRCLIB)
-    let syncedLines = [];
-    let lyricsRAF = null;
-
-    function parseLRC(lrc) {
-      if (!lrc) return [];
-      const lines = [];
-      const re = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/g;
-      let m;
-      while ((m = re.exec(lrc)) !== null) {
-        const min = parseInt(m[1], 10);
-        const sec = parseInt(m[2], 10);
-        const ms = m[3] ? parseInt(m[3].padEnd(3, '0').slice(0, 3), 10) : 0;
-        const time = min * 60 + sec + ms / 1000;
-        const text = m[4].trim();
-        if (text) lines.push({ time, text });
-      }
-      return lines.sort((a, b) => a.time - b.time);
-    }
-
-    async function openLyrics(t) {
-      if (!t) return;
-      const body = $('lyricsBody');
-      body.innerHTML = '<div style="color:var(--muted)"><span class="loader"></span> লিরিক্স লোড হচ্ছে...</div>';
-      $('lyricsOverlay').classList.add('open');
-      syncedLines = [];
-      if (lyricsRAF) cancelAnimationFrame(lyricsRAF);
-
-      const artist = (t.artistNames || [])[0] || '';
-      const title = t.title || '';
-      const durationSec = t.duration ? Math.round(t.duration / 1000) : 0;
-
-      try {
-        let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`;
-        if (durationSec) url += `&duration=${durationSec}`;
-        let res = await fetch(url);
-        let data = null;
-        if (res.ok) data = await res.json();
-
-        if (!data || (!data.plainLyrics && !data.syncedLyrics)) {
-          const sRes = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title + ' ' + artist)}`);
-          const arr = await sRes.json();
-          if (Array.isArray(arr) && arr.length) {
-            data = arr.find(x => x.syncedLyrics || x.plainLyrics) || arr[0];
-          }
-        }
-
-        if (!data || (!data.plainLyrics && !data.syncedLyrics)) {
-          body.innerHTML = '<div style="color:var(--muted);padding:30px 10px">লিরিক্স পাওয়া যায়নি</div>';
-          return;
-        }
-
-        if (data.syncedLyrics) {
-          syncedLines = parseLRC(data.syncedLyrics);
-          body.innerHTML = syncedLines.map((l, i) =>
-            `<div class="lrc-line" data-i="${i}" style="padding:4px 8px;border-radius:8px;transition:.2s;opacity:.45">${esc(l.text)}</div>`
-          ).join('');
-          syncLyricsHighlight();
-        } else {
-          body.textContent = data.plainLyrics || 'লিরিক্স নেই';
-        }
-      } catch (err) {
-        console.error(err);
-        body.innerHTML = '<div style="color:var(--muted);padding:30px 10px">লিরিক্স লোড করতে সমস্যা হয়েছে</div>';
-      }
-    }
-
-    function syncLyricsHighlight() {
-      if (!syncedLines.length || !$('lyricsOverlay').classList.contains('open')) return;
-      const t = audio.currentTime;
-      let cur = -1;
-      for (let i = 0; i < syncedLines.length; i++) {
-        if (syncedLines[i].time <= t) cur = i;
-        else break;
-      }
-      document.querySelectorAll('.lrc-line').forEach((el, i) => {
-        if (i === cur) {
-          el.style.opacity = '1';
-          el.style.color = 'var(--accent)';
-          el.style.fontWeight = '600';
-          el.style.background = 'rgba(139,124,255,0.12)';
-          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        } else {
-          el.style.opacity = '0.4';
-          el.style.color = '';
-          el.style.fontWeight = '';
-          el.style.background = '';
-        }
-      });
-      lyricsRAF = requestAnimationFrame(syncLyricsHighlight);
-    }
-
-    $('fsLyrics').onclick = () => { if (queue[idx]) openLyrics(queue[idx]); };
-    $('btnLyricsSide').onclick = () => { if (queue[idx]) openLyrics(queue[idx]); };
-    $('lyricsClose').onclick = () => {
-      $('lyricsOverlay').classList.remove('open');
-      if (lyricsRAF) cancelAnimationFrame(lyricsRAF);
-    };
-    $('lyricsOverlay').onclick = e => {
-      if (e.target === $('lyricsOverlay')) {
-        $('lyricsOverlay').classList.remove('open');
-        if (lyricsRAF) cancelAnimationFrame(lyricsRAF);
-      }
-    };
-
-    // Stream Quality
-    $('fsQuality').onclick = () => $('sqOverlay').classList.add('open');
-    $('sqClose').onclick = () => $('sqOverlay').classList.remove('open');
-    $('sqOverlay').onclick = e => { if(e.target===$('sqOverlay')) $('sqOverlay').classList.remove('open'); };
-    $('sqList').onclick = e => {
-      const item = e.target.closest('.q-item'); if(!item) return;
-      document.querySelectorAll('#sqList .q-item').forEach(x=>x.classList.remove('selected'));
-      item.classList.add('selected');
-      streamQuality = item.dataset.q;
-      $('fsQuality').textContent = '♪ ' + streamQuality;
-      toast('Stream Quality: ' + streamQuality);
-      if(queue[idx] && playing) play(idx);
-      $('sqOverlay').classList.remove('open');
-    };
-
-    // Favorites side
-    $('btnFavSide').onclick = () => { if(queue[idx]) toggleFav(queue[idx]); };
-    $('fsFav').onclick = () => { if(queue[idx]) toggleFav(queue[idx]); };
-
-    // Queue
-    function openQueue(){
-      const body = $('queueBody');
-      body.innerHTML = '';
-      if(!queue.length){ body.innerHTML='<div class="empty"><p>Queue খালি</p></div>'; }
-      else {
-        queue.forEach((t,i)=>{
-          const d = document.createElement('div');
-          d.className = 'track-card'+(i===idx?' active':'');
-          d.style.padding='8px';
-          d.innerHTML = `<img class="track-art" style="width:38px;height:38px" src="${t.artwork||''}"/>
-            <div class="track-info"><div class="track-title">${esc(t.title)}</div>
-            <div class="track-artist">${esc((t.artistNames||[]).join(', '))}</div></div>`;
-          d.onclick = ()=>{ play(i); openQueue(); };
-          body.appendChild(d);
-        });
-      }
-      $('queueOverlay').classList.add('open');
-    }
-    $('fsQueue').onclick = openQueue;
-    $('queueClose').onclick = () => $('queueOverlay').classList.remove('open');
-    $('queueOverlay').onclick = e => { if(e.target===$('queueOverlay')) $('queueOverlay').classList.remove('open'); };
-
-    // Speed
-    function setSpeed(s){
-      speed = parseFloat(s);
-      audio.playbackRate = speed;
-      $('btnSpeed').textContent = speed+'x';
-      $('fsSpeed').textContent = speed+'x Speed';
-      document.querySelectorAll('.speed-opt').forEach(b => b.classList.toggle('selected', parseFloat(b.dataset.s)===speed));
-      toast('Speed '+speed+'x');
-    }
-    $('btnSpeed').onclick = () => $('speedOverlay').classList.add('open');
-    $('fsSpeed').onclick = () => $('speedOverlay').classList.add('open');
-    $('speedClose').onclick = () => $('speedOverlay').classList.remove('open');
-    document.querySelectorAll('.speed-opt').forEach(b => b.onclick = () => { setSpeed(b.dataset.s); $('speedOverlay').classList.remove('open'); });
-
-    // Sleep
-    function setSleep(m){
-      clearTimeout(sleepTimer);
-      sleepMin = m;
-      if(m<=0){ toast('Sleep Timer বন্ধ'); return; }
-      toast(`Sleep Timer ${m} মিনিট`);
-      sleepTimer = setTimeout(()=>{ audio.pause(); playing=false; syncPlayBtns(); toast('Sleep Timer শেষ'); }, m*60*1000);
-    }
-    $('btnSleep').onclick = () => $('sleepOverlay').classList.add('open');
-    $('fsSleep').onclick = () => $('sleepOverlay').classList.add('open');
-    $('sleepClose').onclick = () => $('sleepOverlay').classList.remove('open');
-    document.querySelectorAll('.sleep-opt').forEach(b => b.onclick = () => { setSleep(+b.dataset.m); $('sleepOverlay').classList.remove('open'); });
-
-    // Media Session
-    function setupMedia(t){
-      if(!('mediaSession' in navigator)) return;
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: t.title||'', artist: (t.artistNames||[]).join(', '),
-        artwork: t.artwork ? [{src:t.artwork, sizes:'300x300'}] : []
-      });
-      navigator.mediaSession.setActionHandler('play', ()=>audio.play());
-      navigator.mediaSession.setActionHandler('pause', ()=>audio.pause());
-      navigator.mediaSession.setActionHandler('previoustrack', prev);
-      navigator.mediaSession.setActionHandler('nexttrack', next);
-    }
-
-    // Keyboard
-    document.onkeydown = e => {
-      if(e.target.tagName==='INPUT') return;
-      if(e.code==='Space'){ e.preventDefault(); $('btnPlay').click(); }
-      if(e.code==='ArrowRight') next();
-      if(e.code==='ArrowLeft') prev();
-    };
-
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('sw.js').catch(()=>{});
-    }
-
-    /* ===== GlassWave 2.0 ===== */
-    const IC={
-      play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
-      pause:'<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>',
-      prev:'<svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>',
-      next:'<svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>',
-      shuf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
-      rep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg>'
-    };
-    [['btnShuf','shuf'],['fsShuf','shuf'],['btnPrev','prev'],['fsPrev','prev'],['btnNext','next'],['fsNext','next'],['btnRep','rep'],['fsRep','rep'],['btnPlay','play'],['fsPlay','play']]
-      .forEach(([id,k])=>{ $(id).innerHTML=IC[k]; });
-    syncPlayBtns = function(){
-      const i = playing ? IC.pause : IC.play;
-      $('btnPlay').innerHTML = i; $('fsPlay').innerHTML = i;
-      document.body.classList.toggle('is-playing', playing);
-    };
-    const _updateNow = updateNow;
-    updateNow = function(t){
-      _updateNow(t);
-      document.documentElement.style.setProperty('--art', t.artwork ? `url("${t.artwork}")` : 'none');
-      $('aurora').classList.add('on');
-    };
-    const GENRES=[['বাংলা হিট','বাংলা গান',330],['Arijit Singh','Arijit Singh',250],['Lo-fi','lofi chill',195],['Pop Hits','pop hits',300],['Hip Hop','hip hop',25],['Rock','rock classics',0],['Bollywood','bollywood',320],['K-Pop','kpop',280],['Arabic','arabic songs',160],['Classical','classical piano',45]];
-    function renderHome(){
-      const on = view==='search' && !results.length && !$('q').value.trim();
-      document.body.classList.toggle('home-on', on);
-      if(!on) return;
-      const h = new Date().getHours();
-      $('greet').textContent = h<5?'শুভ রাত্রি':h<12?'শুভ সকাল':h<16?'শুভ দুপুর':h<19?'শুভ বিকাল':'শুভ সন্ধ্যা';
-      $('railWrap').style.display = recent.length ? 'block' : 'none';
-      $('rail').innerHTML = recent.slice(0,12).map((t,i)=>`<div class="rc" data-i="${i}"><img src="${esc(t.artwork)}" loading="lazy" alt=""><b>${esc(t.title)}</b><span>${esc((t.artistNames||[]).join(', '))}</span></div>`).join('');
-      $('tiles').innerHTML = GENRES.map(g=>`<button class="tile" style="--h:${g[2]}" data-q="${esc(g[1])}">${esc(g[0])}</button>`).join('');
-    }
-    $('home').onclick = e => {
-      const c = e.target.closest('.rc');
-      if(c){ queue=[...recent]; play(+c.dataset.i); return; }
-      const t = e.target.closest('.tile');
-      if(t){ $('q').value=t.dataset.q; search(t.dataset.q); }
-    };
-    const _render = render;
-
-    /* ===== GlassWave 3.0: playlists, menu, themes, visualizer, gestures ===== */
-    let pls = JSON.parse(localStorage.getItem('gw_pl')||'[]'), curPl = null;
-    let qs = JSON.parse(localStorage.getItem('gw_qs')||'[]');
-    const savePl = () => localStorage.setItem('gw_pl', JSON.stringify(pls));
-    const artistOf = t => (t.artistNames||[])[0] || '';
-    const THEMES=[['#a78bfa','#f472b6'],['#22d3ee','#818cf8'],['#34d399','#22d3ee'],['#fb923c','#f43f5e'],['#f0abfc','#60a5fa']];
-    let themeI = +(localStorage.getItem('gw_theme')||0), A1='#a78bfa', A2='#f472b6';
-    function setTheme(i){
-      themeI = i % THEMES.length; [A1,A2] = THEMES[themeI];
-      const r = document.documentElement.style; r.setProperty('--accent',A1); r.setProperty('--accent2',A2);
-      localStorage.setItem('gw_theme', themeI);
-      document.querySelector('meta[name=theme-color]')?.setAttribute('content', '#07070c');
-    }
-    $('btnTheme').onclick = () => { setTheme(themeI+1); toast('থিম বদলানো হয়েছে'); };
-    setTheme(themeI);
-
-    const _search = search;
-    search = async function(q){
-      if(q && q.length>1){ qs=[q,...qs.filter(x=>x!==q)].slice(0,8); localStorage.setItem('gw_qs',JSON.stringify(qs)); }
-      return _search(q);
-    };
-
-    // Action menu
-    const menuClose = () => $('menuOverlay').classList.remove('open');
-    $('menuClose').onclick = menuClose;
-    $('menuOverlay').onclick = e => { if(e.target===$('menuOverlay')) menuClose(); };
-    function menuShow(title, items){
-      $('menuTitle').textContent = title;
-      $('menuBody').innerHTML = items.map((m,i)=>`<div class="mi" data-i="${i}"><i>${m[0]}</i>${esc(m[1])}</div>`).join('');
-      $('menuBody').onclick = e => { const el=e.target.closest('.mi'); if(!el) return; items[+el.dataset.i][2](); };
-      $('menuOverlay').classList.add('open');
-    }
-    function openMenu(t){
-      const items = [
-        ['▶','এরপর বাজাও',()=>{ if(!queue.length){ queue=[t]; play(0); } else queue.splice(idx+1,0,t); toast('এরপর বাজবে'); menuClose(); }],
-        ['＋','কিউতে যোগ করো',()=>{ queue.push(t); toast('কিউতে যোগ হয়েছে'); menuClose(); }],
-        ['♫','প্লেলিস্টে যোগ করো',()=>pickPl(t)],
-        [isFav(t)?'💔':'♥',isFav(t)?'ফেভারিট থেকে সরাও':'ফেভারিটে যোগ করো',()=>{ toggleFav(t); menuClose(); }]
-      ];
-      if(artistOf(t)) items.push(['👤',artistOf(t)+' এর আরও গান',()=>{ menuClose(); $('fs').classList.remove('open'); $('q').value=artistOf(t); search(artistOf(t)); }]);
-      items.push(['↓','ডাউনলোড',()=>{ menuClose(); openDownload(t); }],['ℹ','ট্র্যাক ইনফো',()=>{ menuClose(); openInfo(t); }]);
-      if(view==='pld') items.push(['🗑','প্লেলিস্ট থেকে সরাও',()=>{ const p=pls.find(x=>x.id===curPl); p.tracks=p.tracks.filter(x=>tid(x)!==tid(t)); savePl(); menuClose(); render(); }]);
-      menuShow(t.title||'অপশন', items);
-    }
-    function newPl(t){
-      const name = (prompt('প্লেলিস্টের নাম:')||'').trim(); if(!name) return null;
-      const p = {id:String(Date.now()), name, tracks:t?[t]:[]}; pls.unshift(p); savePl(); return p;
-    }
-    function pickPl(t){
-      const items = [['＋','নতুন প্লেলিস্ট',()=>{ const p=newPl(t); if(p){ toast('"'+p.name+'" এ যোগ হয়েছে'); menuClose(); render(); } }]];
-      pls.forEach(p=>items.push(['♫',`${p.name} (${p.tracks.length})`,()=>{
-        if(!p.tracks.some(x=>tid(x)===tid(t))) p.tracks.push(t);
-        savePl(); toast('"'+p.name+'" এ যোগ হয়েছে'); menuClose(); render(); }]));
-      menuShow('প্লেলিস্ট বাছো', items);
-    }
-    $('fsArtist').onclick = () => { const t=queue[idx]; if(t&&artistOf(t)){ $('fs').classList.remove('open'); $('q').value=artistOf(t); search(artistOf(t)); } };
-    $('fsArtist').style.cursor = 'pointer';
-
-    // Playlist views
-    const _data = data;
-    data = function(){ if(view==='pld'){ const p=pls.find(x=>x.id===curPl); return p?p.tracks:[]; } return _data(); };
-    function renderPl(){
-      const box = $('plView');
-      document.body.classList.toggle('pl-on', view==='pl');
-      if(view==='pl'){
-        box.innerHTML = '<button class="plnew" id="plNew">＋ নতুন প্লেলিস্ট</button>' + pls.map(p=>`<div class="plc" data-id="${p.id}"><div class="cv">${p.tracks[0]&&p.tracks[0].artwork?`<img src="${esc(p.tracks[0].artwork)}" alt="">`:'♫'}</div><div class="n">${esc(p.name)}<small>${p.tracks.length} টি গান</small></div></div>`).join('') + (pls.length?'':'<p style="text-align:center;color:var(--muted);padding:24px">এখনো কোনো প্লেলিস্ট নেই</p>');
-      } else if(view==='pld'){
-        const p = pls.find(x=>x.id===curPl);
-        box.innerHTML = p ? `<div class="plbar"><button data-a="back">←</button><b>${esc(p.name)}</b><button data-a="all">▶ বাজাও</button><button data-a="del">🗑</button></div>` : '';
-        if(p) $('label').textContent = p.tracks.length+' টি গান';
-      } else box.innerHTML = '';
-    }
-    $('plView').onclick = e => {
-      if(e.target.closest('#plNew')){ if(newPl()) render(); return; }
-      const c = e.target.closest('.plc'); if(c){ curPl=c.dataset.id; view='pld'; render(); return; }
-      const b = e.target.closest('[data-a]'); if(!b) return;
-      const p = pls.find(x=>x.id===curPl);
-      if(b.dataset.a==='back'){ view='pl'; render(); }
-      if(b.dataset.a==='all' && p && p.tracks.length){ queue=[...p.tracks]; play(0); }
-      if(b.dataset.a==='del' && p && confirm('"'+p.name+'" মুছে ফেলবে?')){ pls=pls.filter(x=>x!==p); savePl(); view='pl'; render(); }
-    };
-
-    // Home v2 (override)
-    renderHome = function(){
-      const on = view==='search' && !results.length && !$('q').value.trim();
-      document.body.classList.toggle('home-on', on);
-      if(!on) return;
-      const h = new Date().getHours();
-      $('greet').textContent = h<5?'শুভ রাত্রি':h<12?'শুভ সকাল':h<16?'শুভ দুপুর':h<19?'শুভ বিকাল':'শুভ সন্ধ্যা';
-      const rail = (title, src, arr) => arr.length ? `<div class="h2">${title}</div><div class="rail">${arr.slice(0,12).map((t,i)=>`<div class="rc" data-s="${src}" data-i="${i}"><img src="${esc(t.artwork)}" loading="lazy" alt=""><b>${esc(t.title)}</b><span>${esc((t.artistNames||[]).join(', '))}</span></div>`).join('')}</div>` : '';
-      $('railWrap').innerHTML = (qs.length?`<div class="h2">সাম্প্রতিক সার্চ</div><div class="qs">${qs.map(x=>`<button data-q="${esc(x)}">${esc(x)}</button>`).join('')}</div>`:'')
-        + rail('সম্প্রতি শুনেছ','recent',recent) + rail('♥ প্রিয় গান','fav',favs)
-        + (pls.length?`<div class="h2">তোমার প্লেলিস্ট</div><div class="qs">${pls.map(p=>`<button data-pl="${p.id}">♫ ${esc(p.name)}</button>`).join('')}</div>`:'');
-      $('railWrap').style.display='block';
-      $('tiles').innerHTML = GENRES.map(g=>`<button class="tile" style="--h:${g[2]}" data-q="${esc(g[1])}">${esc(g[0])}</button>`).join('');
-    };
-    $('home').onclick = e => {
-      const c = e.target.closest('.rc');
-      if(c){ const src = c.dataset.s==='fav'?favs:recent; queue=[...src]; play(+c.dataset.i); return; }
-      const pl = e.target.closest('[data-pl]');
-      if(pl){ curPl=pl.dataset.pl; view='pld'; setTab('pl'); render(); return; }
-      const t = e.target.closest('[data-q]');
-      if(t){ $('q').value=t.dataset.q; search(t.dataset.q); }
-    };
-    $('q').addEventListener('input', () => { if(!$('q').value.trim()) render(); });
-
-    // render wrapper v3: menu buttons + playlist views
-    render = function(){
-      _render(); renderHome(); renderPl();
-      const arr = data();
-      document.querySelectorAll('#list .track-card').forEach((c,i)=>{
-        const t = arr[i]; if(!t) return;
-        const b = document.createElement('button'); b.className='mini'; b.textContent='⋯';
-        b.onclick = e => { e.stopPropagation(); openMenu(t); };
-        c.querySelector('.track-actions').appendChild(b);
-      });
-    };
-    $('fsDl') && ($('fsQueue').insertAdjacentHTML('afterend','<button class="chip" id="fsMore">⋯ আরও</button>'), $('fsMore').onclick = () => { const t=queue[idx]; if(t) openMenu(t); });
-
-    // Visualizer
-    const cv=$('vis'), cx=cv.getContext('2d'); let amp=0, ph=0;
-    (function drawVis(){
-      if($('fs').classList.contains('open')){
-        amp += ((playing?1:.08)-amp)*.06; ph += .06;
-        const W=cv.width,H=cv.height,n=36,bw=W/n; cx.clearRect(0,0,W,H);
-        const g=cx.createLinearGradient(0,0,W,0); g.addColorStop(0,A1); g.addColorStop(1,A2); cx.fillStyle=g;
-        for(let i=0;i<n;i++){
-          const v=(Math.sin(ph+i*.55)+Math.sin(ph*1.7+i*.23)+2)/4, env=.35+.65*Math.sin(i/(n-1)*Math.PI);
-          const hh=Math.max(3,v*amp*H*env); cx.fillRect(i*bw+2,H-hh,bw-4,hh);
-        }
-      }
-      requestAnimationFrame(drawVis);
-    })();
-
-    // Gestures
-    let sx=0, sy=0;
-    const touch = (el, fn) => { el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
-      el.addEventListener('touchend',e=>fn(e.changedTouches[0].clientX-sx, e.changedTouches[0].clientY-sy),{passive:true}); };
-    touch($('player'),(dx,dy)=>{ if(Math.abs(dx)>70&&Math.abs(dy)<40){ dx<0?next():prev(); } });
-    touch($('fs'),(dx,dy)=>{ if(dy>120&&Math.abs(dx)<60&&$('fs').scrollTop<5) $('fs').classList.remove('open'); });
-
-    /* ===== Language: বাংলা / English ===== */
-    const TR=[['নোট: এই API মূলত Lossless FLAC দেয়। অন্য কোয়ালিটি সবসময় আলাদা নাও হতে পারে।','Note: this API mainly serves Lossless FLAC. Other qualities may not always differ.'],
-    ['ছোট ফাইল · দ্রুত ডাউনলোড','Small file · Fast download'],['ভালো কোয়ালিটি · মাঝারি সাইজ','Good quality · Medium size'],['সেরা কোয়ালিটি · বড় ফাইল','Best quality · Large file'],['সেরা কোয়ালিটি','Best quality'],['উচ্চ কোয়ালিটি','High quality'],['সাশ্রয়ী ব্যান্ডউইথ','Saves data'],
-    ['ডাউনলোড কোয়ালিটি','Download Quality'],['ডাউনলোড শুরু করো','Start download'],['ডাউনলোড শুরু','Download started'],['ডাউনলোড','Download'],
-    ['লিরিক্স লোড করতে সমস্যা হয়েছে','Could not load lyrics'],['লিরিক্স লোড হচ্ছে...','Loading lyrics...'],['লিরিক্স পাওয়া যায়নি','Lyrics not found'],['লিরিক্স নেই','No lyrics'],
-    ['ISRC কপি হয়েছে','ISRC copied'],['ISRC কপি করো','Copy ISRC'],['ISRC নেই','No ISRC'],['Queue খালি','Queue is empty'],
-    ['Repeat বন্ধ','Repeat off'],['Shuffle চালু','Shuffle on'],['Shuffle বন্ধ','Shuffle off'],['Sleep Timer শেষ','Sleep Timer ended'],['Sleep Timer বন্ধ','Sleep Timer off'],
-    [' মিনিট',' min'],['ঘণ্টা','hour'],['বন্ধ করো','Turn off'],['অপশন','Options'],
-    ['এখনো কিছু বাজাওনি',"You haven't played anything yet"],['এখনো কোনো প্লেলিস্ট নেই','No playlists yet'],['কোনো ফেভারিট নেই','No favorites yet'],['কোনো গান বাজছে না','Nothing playing'],['কিছু পাওয়া যায়নি','No results found'],
-    ['সার্চ করে গান খুঁজে নাও','Search to find songs'],['সার্চ ব্যর্থ','Search failed'],['সার্চ রেজাল্ট','Search results'],['সার্চ...','Searching...'],['সাম্প্রতিক সার্চ','Recent searches'],['সার্চ','Search'],
-    ['সম্প্রতি শুনেছ','Recently played'],['রিসেন্ট','Recent'],['ফেভারিট থেকে সরানো','Removed from favorites'],['ফেভারিট থেকে সরাও','Remove from favorites'],['ফেভারিটে যোগ করো','Add to favorites'],['ফেভারিটে যোগ','Added to favorites'],['ফেভারিট','Favorites'],['প্রিয় গান','Liked songs'],
-    ['কিউতে যোগ করো','Add to queue'],['কিউতে যোগ হয়েছে','Added to queue'],['কিউ','Queue'],['এরপর বাজাও','Play next'],['এরপর বাজবে','Playing next'],['ট্র্যাক ইনফো','Track Info'],['থিম বদলানো হয়েছে','Theme changed'],
-    ['নতুন প্লেলিস্ট','New playlist'],['প্লেলিস্ট থেকে সরাও','Remove from playlist'],['প্লেলিস্ট বাছো','Choose a playlist'],['প্লেলিস্টে যোগ করো','Add to playlist'],['প্লেলিস্টের নাম:','Playlist name:'],['তোমার প্লেলিস্ট','Your playlists'],['প্লেলিস্ট','Playlists'],
-    ['এ যোগ হয়েছে','— added'],['এর আরও গান',' · more songs'],['প্লে ব্যর্থ','Playback failed'],['বাংলা হিট','Bangla Hits'],['ব্রাউজ করো','Browse'],['মুছে ফেলবে?','Delete?'],['লিস্ট','List'],
-    ['শুভ সকাল','Good morning'],['শুভ দুপুর','Good afternoon'],['শুভ বিকাল','Good afternoon'],['শুভ সন্ধ্যা','Good evening'],['শুভ রাত্রি','Good night'],
-    [' টি গান',' songs'],['আরও','More'],['বাজাও','Play']].sort((a,b)=>b[0].length-a[0].length);
-    const BN=/[\u0980-\u09FF]/, origTxt=new WeakMap();
-    let lang = localStorage.getItem('gw_lang')==='en' ? 'en' : 'bn';
-    const tr = str => { let o=str; for(const [b,e] of TR) if(o.includes(b)) o=o.split(b).join(e); return o; };
-    function trNode(n){
-      if(n.nodeType===3){
-        if(lang==='en'){ const v=n.nodeValue; if(BN.test(v)){ const t=tr(v); if(t!==v){ origTxt.set(n,v); n.nodeValue=t; } } }
-        else if(origTxt.has(n)){ n.nodeValue=origTxt.get(n); origTxt.delete(n); }
-      } else if(n.nodeType===1 && n.tagName!=='SCRIPT' && n.tagName!=='STYLE'){ n.childNodes.forEach(trNode); }
-    }
-    new MutationObserver(ms=>{ if(lang!=='en') return; ms.forEach(m=>{ if(m.type==='characterData') trNode(m.target); else m.addedNodes.forEach(trNode); }); })
-      .observe(document.body,{childList:true,subtree:true,characterData:true});
-    const _pr=window.prompt.bind(window), _cf=window.confirm.bind(window);
-    window.prompt = m => _pr(lang==='en'?tr(m):m);
-    window.confirm = m => _cf(lang==='en'?tr(m):m);
-    const PH_BN = $('q').placeholder;
-    function setLang(l){
-      lang=l; localStorage.setItem('gw_lang',l);
-      document.documentElement.lang = l==='en'?'en':'bn';
-      $('q').placeholder = l==='en' ? 'Search songs / artists...' : PH_BN;
-      $('btnLang').textContent = l==='en' ? 'বাং' : 'EN';
-      trNode(document.body);
-    }
-    $('btnLang').onclick = () => setLang(lang==='en'?'bn':'en');
-    setLang(lang);
-    render();
-  </script>
+  <div id="app"></div>
+  <script src="app.js"></script>
 </body>
 </html>
