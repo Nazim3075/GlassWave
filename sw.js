@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glasswave-standalone-v1';
+const CACHE_NAME = 'glasswave-standalone-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -30,7 +30,6 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Only cache same-origin app shell assets; let API calls go to network with fallback
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(event.request).then((cached) => {

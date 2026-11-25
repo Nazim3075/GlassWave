@@ -1,4 +1,4 @@
-// GlassWave Standalone Player - Multi-Source Search & Fallback Engine
+// GlassWave Standalone Player - Continuous Radio/Autoplay, Shuffle/Repeat & Multi-Source Fallback
 
 const STORAGE_KEYS = {
   RECENT: 'glasswave_recent_v1',
@@ -6,15 +6,17 @@ const STORAGE_KEYS = {
   SOURCE_PREF: 'glasswave_source_pref_v1',
   LANG_PREF: 'glasswave_lang_pref_v1',
   SPEED_PREF: 'glasswave_speed_pref_v1',
-  THEME_PREF: 'glasswave_theme_pref_v1'
+  THEME_PREF: 'glasswave_theme_pref_v1',
+  AUTO_RADIO_PREF: 'glasswave_autoradio_v1',
+  SHUFFLE_PREF: 'glasswave_shuffle_v1',
+  REPEAT_PREF: 'glasswave_repeat_v1'
 };
 
-// Multiple music search & stream providers with automatic fallback
 const PROVIDERS = [
   {
     id: 'saavn_dev',
-    label: 'Saavn Lossless/HQ',
-    badge: 'HQ · saavn.dev',
+    label: 'Saavn Full Track',
+    badge: 'Full · saavn.dev',
     searchUrl: (q) => `https://saavn.dev/api/search/songs?query=${encodeURIComponent(q)}&limit=25`,
     parse: (json) => {
       const list = json?.data?.results || [];
@@ -22,6 +24,7 @@ const PROVIDERS = [
         const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
         const bestAudio =
           downloads.find((d) => d.quality === '320kbps')?.url ||
+          downloads.find((d) => d.quality === '160kbps')?.url ||
           downloads[downloads.length - 1]?.url ||
           '';
         const images = Array.isArray(item.image) ? item.image : [];
@@ -41,15 +44,15 @@ const PROVIDERS = [
           duration: Number(item.duration) || 0,
           cover,
           audioUrl: bestAudio,
-          source: 'Saavn HQ'
+          source: 'Saavn'
         };
-      }).filter((t) => t.title);
+      }).filter((t) => t.title && t.audioUrl);
     }
   },
   {
     id: 'jiosaavn_sumit',
-    label: 'JioSaavn Mirror',
-    badge: 'HQ · jiosaavn-api',
+    label: 'JioSaavn Full Mirror',
+    badge: 'Full · jiosaavn-api',
     searchUrl: (q) => `https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=${encodeURIComponent(q)}&limit=25`,
     parse: (json) => {
       const list = json?.data?.results || json?.results || [];
@@ -57,6 +60,7 @@ const PROVIDERS = [
         const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
         const bestAudio =
           downloads.find((d) => d.quality === '320kbps')?.url ||
+          downloads.find((d) => d.quality === '160kbps')?.url ||
           downloads[downloads.length - 1]?.url ||
           '';
         const images = Array.isArray(item.image) ? item.image : [];
@@ -76,9 +80,9 @@ const PROVIDERS = [
           duration: Number(item.duration) || 0,
           cover,
           audioUrl: bestAudio,
-          source: 'Saavn Mirror'
+          source: 'JioSaavn'
         };
-      }).filter((t) => t.title);
+      }).filter((t) => t.title && t.audioUrl);
     }
   },
   {
@@ -97,13 +101,13 @@ const PROVIDERS = [
         cover: item.cover || item.artwork || '',
         audioUrl: item.streamUrl || item.url || item.audioUrl || '',
         source: 'Monochrome'
-      })).filter((t) => t.title);
+      })).filter((t) => t.title && t.audioUrl);
     }
   },
   {
     id: 'itunes',
-    label: 'iTunes Catalog',
-    badge: 'AAC · itunes.apple.com',
+    label: 'iTunes (30s Preview)',
+    badge: '30s Preview · iTunes',
     searchUrl: (q) => `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=25`,
     parse: (json) => {
       const list = json?.results || [];
@@ -112,13 +116,23 @@ const PROVIDERS = [
         title: item.trackName || 'Untitled',
         artist: item.artistName || 'Unknown Artist',
         album: item.collectionName || '',
-        duration: item.trackTimeMillis ? Math.round(item.trackTimeMillis / 1000) : 0,
+        duration: 30,
         cover: (item.artworkUrl100 || '').replace('100x100bb', '500x500bb'),
         audioUrl: item.previewUrl || '',
-        source: 'iTunes'
+        source: 'iTunes (30s)'
       })).filter((t) => t.title && t.audioUrl);
     }
   }
+];
+
+const RADIO_SEEDS = [
+  'Bangla hits song',
+  'Arijit Singh hits',
+  'Tahsan Bangla song',
+  'Rabindra Sangeet',
+  'Atif Aslam hits',
+  'Lofi chill songs',
+  'Shreya Ghoshal hits'
 ];
 
 function decodeHtml(str) {
@@ -147,9 +161,7 @@ function loadJson(key, fallback) {
 function saveJson(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore storage quota errors
-  }
+  } catch {}
 }
 
 const state = {
@@ -161,20 +173,23 @@ const state = {
   queue: [],
   currentIndex: -1,
   isPlaying: false,
+  playerExpanded: false,
+  autoRadio: localStorage.getItem(STORAGE_KEYS.AUTO_RADIO_PREF) !== 'false',
+  shuffle: localStorage.getItem(STORAGE_KEYS.SHUFFLE_PREF) === 'true',
+  repeatMode: localStorage.getItem(STORAGE_KEYS.REPEAT_PREF) || 'queue',
   sourcePref: localStorage.getItem(STORAGE_KEYS.SOURCE_PREF) || 'auto',
   lang: localStorage.getItem(STORAGE_KEYS.LANG_PREF) || 'bn',
   speed: parseFloat(localStorage.getItem(STORAGE_KEYS.SPEED_PREF) || '1'),
   theme: localStorage.getItem(STORAGE_KEYS.THEME_PREF) || 'violet',
-  activeSourceLabel: 'Auto Fallback',
+  activeSourceLabel: 'Auto Fallback · Continuous Radio',
   statusMessage: '',
   isLoading: false,
   settingsOpen: false
 };
 
 const audio = new Audio();
-audio.preload = 'metadata';
+audio.preload = 'auto';
 
-// Build ordered provider list based on user preference
 function getOrderedProviders() {
   if (state.sourcePref === 'auto') return PROVIDERS;
   const chosen = PROVIDERS.find((p) => p.id === state.sourcePref);
@@ -182,7 +197,7 @@ function getOrderedProviders() {
   return [chosen, ...PROVIDERS.filter((p) => p.id !== state.sourcePref)];
 }
 
-async function fetchWithTimeout(url, ms = 5500) {
+async function fetchWithTimeout(url, ms = 6000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -194,19 +209,32 @@ async function fetchWithTimeout(url, ms = 5500) {
   }
 }
 
-// Expand Bangla generic searches into rich queries when needed
 function buildSearchQueries(rawQuery) {
-  const q = rawQuery.trim();
-  const normalized = q.replace(/\s+/g, ' ');
-  if (normalized === 'বাংলা গান' || normalized.toLowerCase() === 'bangla song' || normalized.toLowerCase() === 'bangla songs') {
-    return [
-      'Bangla hits',
-      'Arijit Singh Bangla',
-      'Tahsan Bangla song',
-      'Bangla folk modern song'
-    ];
+  const q = rawQuery.trim().replace(/\s+/g, ' ');
+  if (q === 'বাংলা গান' || q.toLowerCase() === 'bangla song' || q.toLowerCase() === 'bangla songs') {
+    return ['Bangla hits', 'Arijit Singh Bangla', 'Tahsan Bangla song', 'Rabindra Sangeet'];
   }
-  return [normalized];
+  return [q];
+}
+
+async function fetchTracksFromProviders(rawQuery) {
+  const candidateQueries = buildSearchQueries(rawQuery);
+  const orderedProviders = getOrderedProviders();
+
+  for (const queryVariant of candidateQueries) {
+    for (const provider of orderedProviders) {
+      try {
+        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 6000);
+        const tracks = provider.parse(json);
+        if (Array.isArray(tracks) && tracks.length > 0) {
+          return { tracks, provider };
+        }
+      } catch (err) {
+        console.warn(`Provider ${provider.id} failed:`, err.message);
+      }
+    }
+  }
+  return null;
 }
 
 async function runSearch(rawQuery) {
@@ -220,68 +248,73 @@ async function runSearch(rawQuery) {
 
   state.query = q;
   state.isLoading = true;
-  state.statusMessage = state.lang === 'bn' ? 'একাধিক সোর্স থেকে গান খোঁজা হচ্ছে...' : 'Searching across sources...';
+  state.statusMessage = state.lang === 'bn' ? 'পূর্ণ গানের সোর্স খোঁজা হচ্ছে...' : 'Searching full-track sources...';
   render();
 
-  const candidateQueries = buildSearchQueries(q);
-  const orderedProviders = getOrderedProviders();
-
-  for (const queryVariant of candidateQueries) {
-    for (const provider of orderedProviders) {
-      try {
-        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 5500);
-        const tracks = provider.parse(json);
-        if (Array.isArray(tracks) && tracks.length > 0) {
-          state.results = tracks;
-          state.activeSourceLabel = provider.badge;
-          state.statusMessage =
-            queryVariant !== q
-              ? (state.lang === 'bn'
-                  ? `"${q}" এর জন্য "${queryVariant}" থেকে ${tracks.length}টি গান পাওয়া গেছে (${provider.label})`
-                  : `Found ${tracks.length} tracks via "${queryVariant}" (${provider.label})`)
-              : (state.lang === 'bn'
-                  ? `${tracks.length}টি গান পাওয়া গেছে · ${provider.label}`
-                  : `${tracks.length} tracks found · ${provider.label}`);
-          state.isLoading = false;
-          render();
-          return;
-        }
-      } catch (err) {
-        console.warn(`Provider ${provider.id} failed for "${queryVariant}":`, err.message);
-      }
-    }
+  const found = await fetchTracksFromProviders(q);
+  if (found) {
+    state.results = found.tracks;
+    state.activeSourceLabel = found.provider.badge;
+    state.statusMessage =
+      state.lang === 'bn'
+        ? `${found.tracks.length}টি গান পাওয়া গেছে · ${found.provider.label} (একটি শেষ হলে পরেরটি অটো চলবে)`
+        : `${found.tracks.length} tracks found · ${found.provider.label} (Auto-next enabled)`;
+    state.isLoading = false;
+    render();
+    return;
   }
 
   state.results = [];
   state.isLoading = false;
   state.statusMessage =
     state.lang === 'bn'
-      ? 'কোনো সোর্স থেকে রেজাল্ট পাওয়া যায়নি। ইংরেজিতে শিল্পী বা গানের নাম লিখে চেষ্টা করুন অথবা VPN চেক করুন।'
-      : 'No results found across providers. Try searching in English or check VPN/network.';
+      ? 'কোনো সোর্স থেকে গান পাওয়া যায়নি। ইংরেজিতে নাম লিখে বা অন্য সোর্স বেছে চেষ্টা করুন।'
+      : 'No results found. Try English keywords or switch source in Settings.';
   render();
 }
 
-function playTrack(track, listContext = null) {
-  if (!track) return;
-  if (!track.audioUrl) {
-    state.statusMessage =
-      state.lang === 'bn'
-        ? 'এই ট্র্যাকটির সরাসরি অডিও লিংক পাওয়া যায়নি, অন্য গান বেছে নিন।'
-        : 'Direct audio stream unavailable for this track.';
-    render();
-    return;
-  }
+async function appendRadioTracks(seedTrack) {
+  const existingKeys = new Set(state.queue.map((t) => `${t.source}:${t.id}:${t.title}`));
+  const artistName = seedTrack?.artist && seedTrack.artist !== 'Unknown Artist'
+    ? seedTrack.artist.split(',')[0].trim()
+    : '';
+  const seeds = artistName
+    ? [`${artistName} songs`, ...RADIO_SEEDS]
+    : [...RADIO_SEEDS];
 
-  if (Array.isArray(listContext) && listContext.length > 0) {
-    state.queue = listContext.filter((t) => Boolean(t.audioUrl));
-    state.currentIndex = state.queue.findIndex((t) => t.id === track.id && t.audioUrl === track.audioUrl);
-    if (state.currentIndex === -1) {
-      state.queue.unshift(track);
+  for (const seed of seeds) {
+    const found = await fetchTracksFromProviders(seed);
+    if (found && found.tracks.length > 0) {
+      const fresh = found.tracks.filter((t) => {
+        const key = `${t.source}:${t.id}:${t.title}`;
+        if (existingKeys.has(key)) return false;
+        existingKeys.add(key);
+        return true;
+      });
+      if (fresh.length > 0) {
+        state.queue = [...state.queue, ...fresh.slice(0, 12)];
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function playTrack(track, listContext = null, { keepQueue = false } = {}) {
+  if (!track || !track.audioUrl) return;
+
+  if (!keepQueue) {
+    if (Array.isArray(listContext) && listContext.length > 0) {
+      state.queue = listContext.filter((t) => Boolean(t.audioUrl));
+      state.currentIndex = state.queue.findIndex((t) => t.id === track.id && t.audioUrl === track.audioUrl);
+      if (state.currentIndex === -1) {
+        state.queue.unshift(track);
+        state.currentIndex = 0;
+      }
+    } else if (state.queue.length === 0) {
+      state.queue = [track];
       state.currentIndex = 0;
     }
-  } else if (state.queue.length === 0) {
-    state.queue = [track];
-    state.currentIndex = 0;
   }
 
   const activeTrack = state.queue[state.currentIndex] || track;
@@ -290,30 +323,29 @@ function playTrack(track, listContext = null) {
   audio.play().then(() => {
     state.isPlaying = true;
     renderPlayerBar();
-  }).catch((err) => {
-    console.warn('Playback error:', err);
+  }).catch(() => {
     state.isPlaying = false;
-    state.statusMessage =
-      state.lang === 'bn'
-        ? 'অডিও প্লে করতে সমস্যা হচ্ছে। অন্য গান চেষ্টা করুন।'
-        : 'Unable to play audio stream.';
-    render();
+    renderPlayerBar();
   });
 
-  // Update Recent
+  if (state.autoRadio && state.currentIndex >= state.queue.length - 2) {
+    appendRadioTracks(activeTrack).then((added) => {
+      if (added && state.tab === 'queue') render();
+    });
+  }
+
   const filteredRecent = state.recent.filter((item) => !(item.id === activeTrack.id && item.source === activeTrack.source));
-  state.recent = [activeTrack, ...filteredRecent].slice(0, 30);
+  state.recent = [activeTrack, ...filteredRecent].slice(0, 40);
   saveJson(STORAGE_KEYS.RECENT, state.recent);
 
   state.isPlaying = true;
   render();
 }
 
-function togglePlayPause() {
+function togglePlayPause(e) {
+  if (e) e.stopPropagation();
   if (!audio.src) {
-    if (state.results.length > 0) {
-      playTrack(state.results[0], state.results);
-    }
+    if (state.results.length > 0) playTrack(state.results[0], state.results);
     return;
   }
   if (audio.paused) {
@@ -326,21 +358,60 @@ function togglePlayPause() {
   renderPlayerBar();
 }
 
-function playNext() {
+async function playNext(e, fromEnded = false) {
+  if (e) e.stopPropagation();
   if (state.queue.length === 0) return;
-  const nextIdx = (state.currentIndex + 1) % state.queue.length;
-  state.currentIndex = nextIdx;
-  playTrack(state.queue[nextIdx], state.queue);
+
+  if (fromEnded && state.repeatMode === 'one' && state.currentIndex >= 0) {
+    playTrack(state.queue[state.currentIndex], state.queue, { keepQueue: true });
+    return;
+  }
+
+  if (state.shuffle && state.queue.length > 1) {
+    let randIdx = Math.floor(Math.random() * state.queue.length);
+    if (randIdx === state.currentIndex) {
+      randIdx = (state.currentIndex + 1) % state.queue.length;
+    }
+    state.currentIndex = randIdx;
+    playTrack(state.queue[randIdx], state.queue, { keepQueue: true });
+    return;
+  }
+
+  const nextIdx = state.currentIndex + 1;
+  if (nextIdx < state.queue.length) {
+    state.currentIndex = nextIdx;
+    playTrack(state.queue[nextIdx], state.queue, { keepQueue: true });
+    return;
+  }
+
+  if (state.autoRadio) {
+    const currentTrack = state.queue[state.currentIndex];
+    const added = await appendRadioTracks(currentTrack);
+    if (added && nextIdx < state.queue.length) {
+      state.currentIndex = nextIdx;
+      playTrack(state.queue[nextIdx], state.queue, { keepQueue: true });
+      return;
+    }
+  }
+
+  state.currentIndex = 0;
+  playTrack(state.queue[0], state.queue, { keepQueue: true });
+}
+
+function playPrev(e) {
+  if (e) e.stopPropagation();
+  if (state.queue.length === 0) return;
+  const prevIdx = (state.currentIndex - 1 + state.queue.length) % state.queue.length;
+  state.currentIndex = prevIdx;
+  playTrack(state.queue[prevIdx], state.queue, { keepQueue: true });
 }
 
 function toggleFavorite(track, event) {
   if (event) event.stopPropagation();
   const exists = state.favorites.some((f) => f.id === track.id && f.source === track.source);
-  if (exists) {
-    state.favorites = state.favorites.filter((f) => !(f.id === track.id && f.source === track.source));
-  } else {
-    state.favorites = [track, ...state.favorites];
-  }
+  state.favorites = exists
+    ? state.favorites.filter((f) => !(f.id === track.id && f.source === track.source))
+    : [track, ...state.favorites];
   saveJson(STORAGE_KEYS.FAVORITES, state.favorites);
   render();
 }
@@ -349,19 +420,18 @@ function isFavorite(track) {
   return state.favorites.some((f) => f.id === track.id && f.source === track.source);
 }
 
-audio.addEventListener('ended', () => {
-  playNext();
-});
+audio.addEventListener('ended', () => playNext(null, true));
 
 audio.addEventListener('timeupdate', () => {
   const prog = document.getElementById('gw-progress');
   const cur = document.getElementById('gw-time-cur');
   const dur = document.getElementById('gw-time-dur');
-  if (prog && audio.duration) {
-    prog.value = String(Math.floor((audio.currentTime / audio.duration) * 100));
+  const totalSec = audio.duration && isFinite(audio.duration) ? audio.duration : (getCurrentTrack()?.duration || 0);
+  if (prog && totalSec > 0) {
+    prog.value = String(Math.floor((audio.currentTime / totalSec) * 100));
   }
   if (cur) cur.textContent = formatTime(audio.currentTime);
-  if (dur && audio.duration) dur.textContent = formatTime(audio.duration);
+  if (dur) dur.textContent = formatTime(totalSec);
 });
 
 const THEMES = {
@@ -385,6 +455,139 @@ function getCurrentTrack() {
     return state.queue[state.currentIndex];
   }
   return null;
+}
+
+function getNextUpTrack() {
+  if (state.queue.length === 0) return null;
+  if (state.repeatMode === 'one') return state.queue[state.currentIndex] || null;
+  const nextIdx = (state.currentIndex + 1) % state.queue.length;
+  return state.queue[nextIdx] || null;
+}
+
+function renderPlayerBar() {
+  const bar = document.getElementById('gw-player-bar');
+  if (!bar) return;
+  const track = getCurrentTrack();
+  if (!track) {
+    bar.innerHTML = '';
+    bar.className = 'player-bar';
+    return;
+  }
+
+  const totalSec = audio.duration && isFinite(audio.duration) ? audio.duration : (track.duration || 0);
+  const pct = totalSec > 0 ? Math.floor((audio.currentTime / totalSec) * 100) : 0;
+  const nextTrack = getNextUpTrack();
+  const isBn = state.lang === 'bn';
+
+  if (state.playerExpanded) {
+    bar.className = 'player-bar visible expanded';
+    bar.innerHTML = `
+      <div class="expanded-header">
+        <button class="pill-btn" id="gw-collapse-btn">⌄ ${isBn ? 'নিচে নামান' : 'Minimize'}</button>
+        <span class="chip">${escapeHtml(track.source || '')}</span>
+      </div>
+      <div class="expanded-art-wrap">
+        <img class="expanded-art" src="${escapeAttr(track.cover || 'icon-512.png')}" alt="" onerror="this.src='icon-512.png'">
+        <div class="expanded-title">${escapeHtml(track.title)}</div>
+        <div class="expanded-artist">${escapeHtml(track.artist)}</div>
+      </div>
+      <div>
+        <div class="player-seek">
+          <span id="gw-time-cur">${formatTime(audio.currentTime)}</span>
+          <input id="gw-progress" type="range" min="0" max="100" value="${pct}">
+          <span id="gw-time-dur">${formatTime(totalSec)}</span>
+        </div>
+        <div class="expanded-controls">
+          <button class="ctrl-btn mode-btn ${state.shuffle ? 'active' : ''}" id="gw-shuffle-btn" title="Shuffle">🔀</button>
+          <button class="ctrl-btn big" id="gw-prev-btn">⏮</button>
+          <button class="ctrl-btn big primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
+          <button class="ctrl-btn big" id="gw-next-btn">⏭</button>
+          <button class="ctrl-btn mode-btn ${state.repeatMode === 'one' ? 'active' : ''}" id="gw-repeat-btn" title="Repeat One">🔂</button>
+        </div>
+        <div class="up-next-box">
+          ${isBn ? 'এরপর বাজবে' : 'Up next'}: <strong>${escapeHtml(nextTrack ? `${nextTrack.title} — ${nextTrack.artist}` : (state.autoRadio ? 'অটো রেডিও লোড হচ্ছে...' : 'কিউ শেষ'))}</strong>
+        </div>
+      </div>
+    `;
+    document.getElementById('gw-collapse-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.playerExpanded = false;
+      renderPlayerBar();
+    });
+    document.getElementById('gw-prev-btn')?.addEventListener('click', playPrev);
+    document.getElementById('gw-play-btn')?.addEventListener('click', togglePlayPause);
+    document.getElementById('gw-next-btn')?.addEventListener('click', (e) => playNext(e, false));
+    document.getElementById('gw-shuffle-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.shuffle = !state.shuffle;
+      localStorage.setItem(STORAGE_KEYS.SHUFFLE_PREF, String(state.shuffle));
+      renderPlayerBar();
+    });
+    document.getElementById('gw-repeat-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.repeatMode = state.repeatMode === 'one' ? 'queue' : 'one';
+      localStorage.setItem(STORAGE_KEYS.REPEAT_PREF, state.repeatMode);
+      renderPlayerBar();
+    });
+  } else {
+    bar.className = 'player-bar visible';
+    bar.innerHTML = `
+      <div class="player-top">
+        <img class="player-thumb" src="${escapeAttr(track.cover || 'icon-192.png')}" alt="" onerror="this.src='icon-192.png'">
+        <div class="player-info">
+          <div class="player-title">${escapeHtml(track.title)}</div>
+          <div class="player-artist">${escapeHtml(track.artist)} · ${isBn ? 'ট্যাপ করে বড় করুন' : 'Tap to expand'}</div>
+        </div>
+        <div class="player-controls">
+          <button class="ctrl-btn primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
+          <button class="ctrl-btn" id="gw-next-btn">⏭</button>
+        </div>
+      </div>
+      <div class="player-seek">
+        <span id="gw-time-cur">${formatTime(audio.currentTime)}</span>
+        <input id="gw-progress" type="range" min="0" max="100" value="${pct}">
+        <span id="gw-time-dur">${formatTime(totalSec)}</span>
+      </div>
+    `;
+    bar.onclick = () => {
+      state.playerExpanded = true;
+      renderPlayerBar();
+    };
+    document.getElementById('gw-play-btn')?.addEventListener('click', togglePlayPause);
+    document.getElementById('gw-next-btn')?.addEventListener('click', (e) => playNext(e, false));
+  }
+
+  const prog = document.getElementById('gw-progress');
+  if (prog) {
+    prog.addEventListener('click', (e) => e.stopPropagation());
+    prog.addEventListener('input', (e) => {
+      const durNow = audio.duration && isFinite(audio.duration) ? audio.duration : (track.duration || 0);
+      if (durNow > 0) {
+        audio.currentTime = (Number(e.target.value) / 100) * durNow;
+      }
+    });
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/'/g, '&#39;');
+}
+
+function getDisplayedTracks() {
+  if (state.tab === 'search') return state.results;
+  if (state.tab === 'recent') return state.recent;
+  if (state.tab === 'favorites') return state.favorites;
+  if (state.tab === 'playlists') return state.recent.slice(0, 15);
+  if (state.tab === 'queue') return state.queue;
+  return [];
 }
 
 function renderTrackList(tracks, emptyText) {
@@ -424,65 +627,6 @@ function renderTrackList(tracks, emptyText) {
   `;
 }
 
-function renderPlayerBar() {
-  const bar = document.getElementById('gw-player-bar');
-  if (!bar) return;
-  const track = getCurrentTrack();
-  if (!track) {
-    bar.innerHTML = '';
-    bar.classList.remove('visible');
-    return;
-  }
-  bar.classList.add('visible');
-  bar.innerHTML = `
-    <div class="player-top">
-      <img class="player-thumb" src="${escapeAttr(track.cover || 'icon-192.png')}" alt="" onerror="this.src='icon-192.png'">
-      <div class="player-info">
-        <div class="player-title">${escapeHtml(track.title)}</div>
-        <div class="player-artist">${escapeHtml(track.artist)}</div>
-      </div>
-      <div class="player-controls">
-        <button class="ctrl-btn primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
-        <button class="ctrl-btn" id="gw-next-btn">⏭</button>
-      </div>
-    </div>
-    <div class="player-seek">
-      <span id="gw-time-cur">${formatTime(audio.currentTime)}</span>
-      <input id="gw-progress" type="range" min="0" max="100" value="${audio.duration ? Math.floor((audio.currentTime / audio.duration) * 100) : 0}">
-      <span id="gw-time-dur">${formatTime(audio.duration)}</span>
-    </div>
-  `;
-
-  document.getElementById('gw-play-btn')?.addEventListener('click', togglePlayPause);
-  document.getElementById('gw-next-btn')?.addEventListener('click', playNext);
-  document.getElementById('gw-progress')?.addEventListener('input', (e) => {
-    if (audio.duration) {
-      audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
-    }
-  });
-}
-
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/'/g, '&#39;');
-}
-
-function getDisplayedTracks() {
-  if (state.tab === 'search') return state.results;
-  if (state.tab === 'recent') return state.recent;
-  if (state.tab === 'favorites') return state.favorites;
-  if (state.tab === 'playlists') return state.recent.slice(0, 12);
-  if (state.tab === 'queue') return state.queue;
-  return [];
-}
-
 function render() {
   applyTheme();
   const app = document.getElementById('app');
@@ -518,13 +662,16 @@ function render() {
       </form>
 
       <div class="quick-chips">
+        <button type="button" class="chip" data-quick="Bangla hits">Bangla Hits</button>
         <button type="button" class="chip" data-quick="Arijit Singh">Arijit Singh</button>
         <button type="button" class="chip" data-quick="Tahsan">Tahsan</button>
         <button type="button" class="chip" data-quick="Rabindra Sangeet">Rabindra Sangeet</button>
-        <button type="button" class="chip" data-quick="বাংলা গান">বাংলা গান</button>
       </div>
 
-      <div class="section-label">${labels.searchResults}</div>
+      <div class="section-label">
+        <span>${labels.searchResults}</span>
+        ${state.results.length > 0 ? `<button type="button" class="chip" id="gw-play-all-btn">${isBn ? '▶ সব একসাথে প্লে' : '▶ Play All'}</button>` : ''}
+      </div>
       ${state.statusMessage ? `<div class="status-banner">${escapeHtml(state.statusMessage)}</div>` : ''}
       ${
         state.isLoading
@@ -562,6 +709,13 @@ function render() {
           <div class="modal-header">
             <h3>${isBn ? 'অ্যাপ সেটিংস ও সোর্স' : 'App Settings & Sources'}</h3>
             <button class="icon-btn" id="gw-close-settings">✕</button>
+          </div>
+          <div class="setting-row">
+            <label>${isBn ? 'অটো রেডিও / একের পর এক গান' : 'Continuous Autoplay / Radio'}</label>
+            <select id="gw-autoradio-select">
+              <option value="true" ${state.autoRadio ? 'selected' : ''}>${isBn ? 'চালু (গান শেষ হলে অটো নতুন গান আসবে)' : 'On (Continuous next tracks)'}</option>
+              <option value="false" ${!state.autoRadio ? 'selected' : ''}>${isBn ? 'বন্ধ (শুধু বর্তমান কিউ ঘুরবে)' : 'Off (Current queue only)'}</option>
+            </select>
           </div>
           <div class="setting-row">
             <label>${isBn ? 'মিউজিক সোর্স (Fallback)' : 'Music Source'}</label>
@@ -606,6 +760,9 @@ function render() {
 
     <div class="speed-strip">
       <button class="speed-pill" id="gw-speed-btn">${state.speed}x</button>
+      <button type="button" class="pill-btn ${state.autoRadio ? 'active-toggle' : ''}" id="gw-radio-pill">
+        ${isBn ? (state.autoRadio ? '∞ অটো নেক্সট চালু' : '∞ অটো নেক্সট বন্ধ') : (state.autoRadio ? '∞ Auto Next ON' : '∞ Auto Next OFF')}
+      </button>
     </div>
 
     <main class="content">
@@ -642,11 +799,22 @@ function render() {
 
   renderPlayerBar();
 
-  // Wire events
   document.getElementById('gw-search-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const input = document.getElementById('gw-search-input');
     if (input) runSearch(input.value);
+  });
+
+  document.getElementById('gw-play-all-btn')?.addEventListener('click', () => {
+    if (state.results.length > 0) {
+      playTrack(state.results[0], state.results);
+    }
+  });
+
+  document.getElementById('gw-radio-pill')?.addEventListener('click', () => {
+    state.autoRadio = !state.autoRadio;
+    localStorage.setItem(STORAGE_KEYS.AUTO_RADIO_PREF, String(state.autoRadio));
+    render();
   });
 
   document.querySelectorAll('[data-quick]').forEach((btn) => {
@@ -725,6 +893,12 @@ function render() {
       state.settingsOpen = false;
       render();
     }
+  });
+
+  document.getElementById('gw-autoradio-select')?.addEventListener('change', (e) => {
+    state.autoRadio = e.target.value === 'true';
+    localStorage.setItem(STORAGE_KEYS.AUTO_RADIO_PREF, String(state.autoRadio));
+    render();
   });
 
   document.getElementById('gw-source-select')?.addEventListener('change', (e) => {
