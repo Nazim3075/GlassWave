@@ -352,7 +352,13 @@ function getOrderedProviders(allowPreviewInAuto = false) {
   return [chosen, ...pool.filter((p) => p.id !== state.sourcePref)];
 }
 
-async function fetchWithTimeout(url, ms = 7500) {
+const CORS_PROXIES = [
+  '',
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?'
+];
+
+async function fetchJsonDirect(url, ms = 6500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -362,6 +368,19 @@ async function fetchWithTimeout(url, ms = 7500) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchWithTimeout(url, ms = 7000) {
+  let lastErr = null;
+  for (const proxy of CORS_PROXIES) {
+    const targetUrl = proxy ? `${proxy}${encodeURIComponent(url)}` : url;
+    try {
+      return await fetchJsonDirect(targetUrl, ms);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Network request failed');
 }
 
 function buildSearchQueries(rawQuery) {
@@ -487,7 +506,7 @@ async function runSearch(rawQuery) {
   state.statusMessage = state.lang === 'bn' ? 'সোর্সগুলো থেকে গান খোঁজা হচ্ছে...' : 'Searching music sources...';
   render();
 
-  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: false });
+  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: state.sourcePref === 'auto' });
   if (found) {
     state.results = found.tracks;
     state.activeSourceLabel = found.provider.badge;
@@ -509,8 +528,8 @@ async function runSearch(rawQuery) {
   state.isLoading = false;
   state.statusMessage =
     state.lang === 'bn'
-      ? 'সোর্স থেকে গান পাওয়া যায়নি। ইংরেজিতে নাম লিখে বা সেটিংস থেকে অন্য সোর্স চেষ্টা করুন।'
-      : 'No tracks found. Try English keywords or switch source in Settings.';
+      ? 'বর্তমানে কোনো সোর্স থেকে গান পাওয়া যায়নি। ইন্টারনেট সংযোগ বা VPN/DNS চেক করে অন্য শব্দ দিয়ে সার্চ করুন।'
+      : 'No tracks returned from sources right now. Check your connection or try another search term.';
   render();
 }
 
@@ -1345,6 +1364,10 @@ function render() {
 
 window.addEventListener('DOMContentLoaded', () => {
   render();
+  if (state.tab === 'search' && !state.query && state.results.length === 0) {
+    state.query = 'Bangla hits';
+    runSearch('Bangla hits');
+  }
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch((err) => {
       console.warn('SW registration failed:', err);
