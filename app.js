@@ -284,15 +284,10 @@ function decodeHtml(str) {
 function cleanLyricsText(raw) {
   if (!raw) return '';
   return decodeHtml(String(raw))
-    .replace(/<br\s*\/?>/gi, '
-')
-    .replace(/<\/p>/gi, '
-')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/
-{3,}/g, '
-
-')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
