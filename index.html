@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#07070c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <title>GlassWave</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07070c;
+      --glass: rgba(255,255,255,0.06);
+      --glass2: rgba(255,255,255,0.1);
+      --border: rgba(255,255,255,0.11);
+      --text: #f0f0f5;
+      --muted: #8b8b9a;
+      --accent: #8b7cff;
+      --pink: #ec4899;
+      --glow: rgba(139,124,255,0.4);
+      --radius: 16px;
+      --safe: env(safe-area-inset-bottom, 0px);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 15% 20%, rgba(139,124,255,0.16), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 85% 75%, rgba(236,72,153,0.1), transparent 50%);
+      background-attachment: fixed;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .app {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 12px 12px calc(160px + var(--safe));
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 100%;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+    }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #8b7cff, #ec4899);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      box-shadow: 0 0 18px var(--glow);
+    }
+    .logo-icon svg { width: 16px; height: 16px; fill: #fff; }
+    .search-wrap { flex: 1; min-width: 140px; position: relative; }
+    .search-wrap input {
+      width: 100%;
+      padding: 11px 14px 11px 40px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-icon {
+      position: absolute; left: 13px; top: 50%;
+      transform: translateY(-50%); color: var(--muted); pointer-events: none;
+    }
+    .icon-btn {
+      width: 38px; height: 38px;
+      border-radius: 11px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+    .icon-btn.active, .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 5px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab.active {
+      background: rgba(139,124,255,0.18);
+      border-color: rgba(139,124,255,0.35);
+      color: #c4b5ff;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding-left: 2px;
+    }
+
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 52vh;
+      overflow-y: auto;
+      padding: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.12) transparent;
+    }
+    .track-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: .15s;
+    }
+    .track-card:hover { background: var(--glass2); }
+    .track-card.active {
+      background: rgba(139,124,255,0.15);
+      border-color: rgba(139,124,255,0.28);
+    }
+    .track-art {
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #14141e;
+      flex-shrink: 0;
+    }
+    .track-info { flex: 1; min-width: 0; }
+    .track-title {
+      font-weight: 500; font-size: 0.88rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .track-artist {
+      font-size: 0.74rem; color: var(--muted); margin-top: 1px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .track-actions { display: flex; gap: 2px; }
+    .mini {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+    .mini:hover { color: var(--text); background: rgba(255,255,255,0.07); }
+    .mini.fav.active { color: #f472b6; }
+    .track-duration {
+      font-size: 0.72rem; color: var(--muted);
+      font-variant-numeric: tabular-nums; min-width: 34px; text-align: right;
+    }
+
+    /* Now panel */
+    .now-panel {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .now-art {
+      width: 180px; height: 180px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.45);
+      background: #14141e;
+    }
+    .now-title { font-size: 1rem; font-weight: 600; text-align: center; }
+    .now-artist { font-size: 0.82rem; color: var(--muted); text-align: center; margin-top: -6px; }
+    .now-actions { display: flex; gap: 8px; }
+
+    .empty {
+      text-align: center;
+      padding: 40px 12px;
+      color: var(--muted);
+    }
+    .empty svg { width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.35; }
+
+    .status { font-size: 0.78rem; color: var(--muted); padding: 2px; min-height: 1.3em; }
+
+    /* Player bar */
+    .player {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      padding: 10px 14px calc(10px + var(--safe));
+      background: rgba(7,7,12,0.88);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .player.show { display: flex; }
+    .player-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .player-track {
+      display: flex; align-items: center; gap: 10px;
+      flex: 1; min-width: 0;
+    }
+    .player-art {
+      width: 42px; height: 42px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #14141e;
+      flex-shrink: 0;
+    }
+    .player-meta { min-width: 0; }
+    .player-meta .t {
+      font-size: 0.86rem; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .player-meta .a { font-size: 0.7rem; color: var(--muted); }
+    .controls { display: flex; align-items: center; gap: 4px; }
+    .ctrl {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: none; border: none;
+      color: var(--text);
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+    .ctrl:hover { background: rgba(255,255,255,0.08); }
+    .ctrl.play {
+      width: 42px; height: 42px;
+      background: var(--accent);
+      box-shadow: 0 0 16px var(--glow);
+    }
+    .ctrl.active { color: var(--accent); }
+    .progress-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.68rem; color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .bar {
+      flex: 1; height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px; cursor: pointer; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--pink));
+      border-radius: 99px; width: 0%;
+    }
+    .vol-wrap {
+      display: none; align-items: center; gap: 5px;
+    }
+    @media (min-width: 640px) {
+      .vol-wrap { display: flex; }
+    }
+    .vol-bar {
+      width: 64px; height: 4px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 99px; cursor: pointer;
+    }
+    .vol-fill {
+      height: 100%; background: var(--muted);
+      border-radius: 99px; width: 80%;
+    }
+
+    /* Fullscreen player sheet */
+    .fs-player {
+      position: fixed; inset: 0;
+      background: #0a0a12;
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      padding: 20px 20px calc(20px + var(--safe));
+      overflow-y: auto;
+    }
+    .fs-player.open { display: flex; }
+    .fs-close {
+      align-self: flex-start;
+      background: none; border: none;
+      color: var(--muted); font-size: 1.5rem; cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .fs-art {
+      width: min(280px, 70vw);
+      height: min(280px, 70vw);
+      border-radius: 18px;
+      object-fit: cover;
+      margin: 10px auto 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      background: #14141e;
+    }
+    .fs-title { font-size: 1.25rem; font-weight: 700; text-align: center; }
+    .fs-artist { font-size: 0.95rem; color: var(--muted); text-align: center; margin: 4px 0 18px; }
+    .fs-controls {
+      display: flex; justify-content: center; align-items: center;
+      gap: 18px; margin: 16px 0;
+    }
+    .fs-controls .ctrl { width: 44px; height: 44px; }
+    .fs-controls .ctrl.play { width: 64px; height: 64px; }
+    .fs-progress { margin: 8px 0 16px; }
+    .fs-extra {
+      display: flex; justify-content: center; flex-wrap: wrap;
+      gap: 10px; margin-top: 8px;
+    }
+    .chip {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chip.active { border-color: var(--accent); color: var(--accent); background: rgba(139,124,255,0.12); }
+
+    /* Modals */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      z-index: 180;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .sheet {
+      width: 100%; max-width: 440px;
+      max-height: 75vh;
+      background: #111118;
+      border: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      padding: 16px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .sheet h3 {
+      font-size: 1rem; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .sheet .x {
+      background: none; border: none;
+      color: var(--muted); font-size: 1.4rem; cursor: pointer;
+    }
+    .sheet-body { overflow-y: auto; flex: 1; }
+
+    .quality-list { display: flex; flex-direction: column; gap: 8px; }
+    .q-item {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .q-item:hover, .q-item.selected {
+      border-color: var(--accent);
+      background: rgba(139,124,255,0.12);
+    }
+    .q-item .badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(139,124,255,0.25);
+      color: #c4b5ff;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(130px + var(--safe));
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(20,20,32,0.95);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 0.84rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: .28s;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .loader {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .main { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 820px) {
+      .main { grid-template-columns: 1fr 280px; }
+      .now-panel { position: sticky; top: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        </div>
+        GlassWave
+      </div>
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="search" id="q" placeholder="গান / আর্টিস্ট সার্চ..." autocomplete="off" />
+      </div>
+      <button class="icon-btn" id="btnSleep" title="Sleep Timer">⏱</button>
+      <button class="icon-btn" id="btnSpeed" title="Speed">1x</button>
+    </header>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-v="search">সার্চ</button>
+      <button class="tab" data-v="recent">রিসেন্ট</button>
+      <button class="tab" data-v="fav">ফেভারিট</button>
+      <button class="tab" data-v="queue">কিউ</button>
+    </div>
+
+    <div class="main">
+      <section>
+        <div class="section-label" id="label">সার্চ রেজাল্ট</div>
+        <div class="track-list glass" id="list">
+          <div class="empty" id="empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+            </svg>
+            <p>সার্চ করে গান খুঁজে নাও</p>
+            <p style="font-size:0.75rem;margin-top:6px;opacity:.6">Lossless · tracks.monochrome.st</p>
+          </div>
+        </div>
+        <div class="status" id="status"></div>
+      </section>
+
+      <aside class="now-panel glass" id="side">
+        <img class="now-art" id="sideArt" style="display:none" alt="" />
+        <div class="empty" id="sideEmpty" style="padding:28px 6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:42px;height:42px">
+            <circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/>
+          </svg>
+          <p>কোনো গান বাজছে না</p>
+        </div>
+        <div id="sideMeta" style="display:none;width:100%;text-align:center">
+          <div class="now-title" id="sideTitle">—</div>
+          <div class="now-artist" id="sideArtist">—</div>
+          <div class="now-actions">
+            <button class="icon-btn" id="btnFavSide" title="Favorite">♥</button>
+            <button class="icon-btn" id="btnDlSide" title="Download">↓</button>
+            <button class="icon-btn" id="btnLyricsSide" title="Lyrics">🎤</button>
+            <button class="icon-btn" id="btnInfoSide" title="Track Info">ℹ</button>
+            <button class="icon-btn" id="btnExpand" title="Expand">⛶</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Mini Player -->
+  <div class="player" id="player">
+    <div class="player-top">
+      <div class="player-track" id="openFs">
+        <img class="player-art" id="pArt" alt="" />
+        <div class="player-meta">
+          <div class="t" id="pTitle">—</div>
+          <div class="a" id="pArtist">—</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="ctrl" id="btnShuf" title="Shuffle">⇄</button>
+        <button class="ctrl" id="btnPrev">⏮</button>
+        <button class="ctrl play" id="btnPlay">▶</button>
+        <button class="ctrl" id="btnNext">⏭</button>
+        <button class="ctrl" id="btnRep" title="Repeat">🔁</button>
+      </div>
+      <div class="vol-wrap">
+        <span style="font-size:0.7rem;opacity:.7">🔊</span>
+        <div class="vol-bar" id="volBar"><div class="vol-fill" id="volFill"></div></div>
+      </div>
+    </div>
+    <div class="progress-row">
+      <span id="tCur">0:00</span>
+      <div class="bar" id="prog"><div class="bar-fill" id="fill"></div></div>
+      <span id="tTot">0:00</span>
+    </div>
+  </div>
+
+  <!-- Fullscreen Player -->
+  <div class="fs-player" id="fs">
+    <button class="fs-close" id="fsClose">✕</button>
+    <img class="fs-art" id="fsArt" alt="" />
+    <div class="fs-title" id="fsTitle">—</div>
+    <div class="fs-artist" id="fsArtist">—</div>
+    <div class="fs-progress">
+      <div class="progress-row">
+        <span id="fsCur">0:00</span>
+        <div class="bar" id="fsProg"><div class="bar-fill" id="fsFill"></div></div>
+        <span id="fsTot">0:00</span>
+      </div>
+    </div>
+    <div class="fs-controls">
+      <button class="ctrl" id="fsShuf">⇄</button>
+      <button class="ctrl" id="fsPrev">⏮</button>
+      <button class="ctrl play" id="fsPlay">▶</button>
+      <button class="ctrl" id="fsNext">⏭</button>
+      <button class="ctrl" id="fsRep">🔁</button>
+    </div>
+    <div class="fs-extra">
+      <button class="chip" id="fsFav">♥ Favorite</button>
+      <button class="chip" id="fsDl">↓ Download</button>
+      <button class="chip" id="fsLyrics">🎤 Lyrics</button>
+      <button class="chip" id="fsInfo">ℹ Track Info</button>
+      <button class="chip" id="fsQuality">♪ Quality</button>
+      <button class="chip" id="fsQueue">☰ Queue</button>
+      <button class="chip" id="fsSpeed">1x Speed</button>
+      <button class="chip" id="fsSleep">⏱ Sleep</button>
+    </div>
+  </div>
+
+  <!-- Lyrics Sheet -->
+  <div class="overlay" id="lyricsOverlay">
+    <div class="sheet" style="max-height:85vh">
+      <h3>Lyrics <button class="x" id="lyricsClose">×</button></h3>
+      <div class="sheet-body" id="lyricsBody" style="font-size:0.95rem;line-height:1.85;white-space:pre-wrap;text-align:center;padding:8px 4px 24px"></div>
+    </div>
+  </div>
+
+  <!-- Track Info Sheet -->
+  <div class="overlay" id="infoOverlay">
+    <div class="sheet">
+      <h3>Track Info <button class="x" id="infoClose">×</button></h3>
+      <div class="sheet-body" id="infoBody" style="font-size:0.88rem;line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- Stream Quality Sheet -->
+  <div class="overlay" id="sqOverlay">
+    <div class="sheet">
+      <h3>Stream Quality <button class="x" id="sqClose">×</button></h3>
+      <div class="sheet-body">
+        <div class="quality-list" id="sqList">
+          <div class="q-item selected" data-q="LOSSLESS">
+            <div>
+              <div style="font-weight:600">FLAC Lossless</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">সেরা কোয়ালিটি</div>
+            </div>
+            <span class="badge">Best</span>
+          </div>
+          <div class="q-item" data-q="HIGH">
+            <div>
+              <div style="font-weight:600">High</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">উচ্চ কোয়ালিটি</div>
+            </div>
+          </div>
+          <div class="q-item" data-q="LOW">
+            <div>
+              <div style="font-weight:600">Normal</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">সাশ্রয়ী ব্যান্ডউইথ</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:12px;text-align:center">
+          নোট: এই API মূলত Lossless FLAC দেয়। অন্য কোয়ালিটি সবসময় আলাদা নাও হতে পারে।
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download Quality Sheet -->
+  <div class="overlay" id="dlOverlay">
+    <div class="sheet">
+      <h3>ডাউনলোড কোয়ালিটি <button class="x" id="dlClose">×</button></h3>
+      <div class="sheet-body">
+        <div class="quality-list" id="qList">
+          <div class="q-item selected" data-q="LOSSLESS">
+            <div>
+              <div style="font-weight:600">FLAC Lossless</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">সেরা কোয়ালিটি · বড় ফাইল</div>
+            </div>
+            <span class="badge">Recommended</span>
+          </div>
+          <div class="q-item" data-q="HIGH">
+            <div>
+              <div style="font-weight:600">High (≈320kbps)</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">ভালো কোয়ালিটি · মাঝারি সাইজ</div>
+            </div>
+          </div>
+          <div class="q-item" data-q="LOW">
+            <div>
+              <div style="font-weight:600">Normal</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">ছোট ফাইল · দ্রুত ডাউনলোড</div>
+            </div>
+          </div>
+        </div>
+        <button class="chip" id="dlConfirm" style="width:100%;justify-content:center;margin-top:14px;padding:12px;background:var(--accent);border:none;color:#fff;font-weight:600">
+          ডাউনলোড শুরু করো
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queue / Sleep / Speed sheets -->
+  <div class="overlay" id="queueOverlay">
+    <div class="sheet">
+      <h3>Queue <button class="x" id="queueClose">×</button></h3>
+      <div class="sheet-body" id="queueBody"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="sleepOverlay">
+    <div class="sheet">
+      <h3>Sleep Timer <button class="x" id="sleepClose">×</button></h3>
+      <div class="sheet-body" style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="chip sleep-opt" data-m="5">5 মিনিট</button>
+        <button class="chip sleep-opt" data-m="15">15 মিনিট</button>
+        <button class="chip sleep-opt" data-m="30">30 মিনিট</button>
+        <button class="chip sleep-opt" data-m="45">45 মিনিট</button>
+        <button class="chip sleep-opt" data-m="60">1 ঘণ্টা</button>
+        <button class="chip sleep-opt" data-m="0">বন্ধ করো</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="speedOverlay">
+    <div class="sheet">
+      <h3>Playback Speed <button class="x" id="speedClose">×</button></h3>
+      <div class="sheet-body" style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="chip speed-opt" data-s="0.5">0.5x</button>
+        <button class="chip speed-opt" data-s="0.75">0.75x</button>
+        <button class="chip speed-opt selected" data-s="1">1x</button>
+        <button class="chip speed-opt" data-s="1.25">1.25x</button>
+        <button class="chip speed-opt" data-s="1.5">1.5x</button>
+        <button class="chip speed-opt" data-s="2">2x</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <audio id="audio" preload="metadata"></audio>
+
+  <script>
+    const API = 'https://tracks.monochrome.st';
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const fmt = ms => { if(!ms) return '0:00'; const s=Math.floor(ms/1000); return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; };
+    const fmtS = s => { if(!s||isNaN(s)) return '0:00'; return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; };
+    const tid = t => String(t.trackId || t.id);
+
+    let view = 'search', results = [], queue = [], idx = -1;
+    let playing = false, shuffle = false, repeat = 0;
+    let speed = 1, sleepTimer = null, sleepMin = 0;
+    let streamQuality = 'LOSSLESS';
+    let favs = JSON.parse(localStorage.getItem('gw_fav')||'[]');
+    let recent = JSON.parse(localStorage.getItem('gw_rec')||'[]');
+    let dlTrack = null, dlQuality = 'LOSSLESS';
+
+    function toast(m) {
+      const t = $('toast'); t.textContent = m;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    function saveFav(){ localStorage.setItem('gw_fav', JSON.stringify(favs)); }
+    function saveRec(){ localStorage.setItem('gw_rec', JSON.stringify(recent.slice(0,40))); }
+    function isFav(t){ return favs.some(f => tid(f)===tid(t)); }
+
+    function toggleFav(t){
+      const i = favs.findIndex(f => tid(f)===tid(t));
+      if(i>=0){ favs.splice(i,1); toast('ফেভারিট থেকে সরানো'); }
+      else { favs.unshift(t); toast('ফেভারিটে যোগ'); }
+      saveFav();
+      if(view==='fav') render();
+      updateFavUI(t);
+    }
+    function updateFavUI(t){
+      const on = isFav(t);
+      document.querySelectorAll('.mini.fav').forEach(b => {
+        if(b.dataset.id===tid(t)) b.classList.toggle('active', on);
+      });
+      $('btnFavSide')?.classList.toggle('active', queue[idx] && tid(queue[idx])===tid(t) && on);
+      $('fsFav')?.classList.toggle('active', on);
+    }
+    function addRecent(t){
+      recent = recent.filter(r => tid(r)!==tid(t));
+      recent.unshift(t);
+      if(recent.length>40) recent.pop();
+      saveRec();
+    }
+
+    // Search
+    let timer;
+    $('q').oninput = () => {
+      clearTimeout(timer);
+      const v = $('q').value.trim();
+      if(v.length<2) return;
+      timer = setTimeout(() => search(v), 360);
+    };
+    $('q').onkeydown = e => { if(e.key==='Enter'){ clearTimeout(timer); search($('q').value.trim()); } };
+
+    async function search(q){
+      if(!q) return;
+      view='search'; setTab('search');
+      $('status').innerHTML = '<span class="loader"></span> সার্চ...';
+      $('empty').style.display='none';
+      try {
+        const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+        const d = await r.json();
+        results = d.tracks || [];
+        render();
+        $('status').textContent = results.length ? `${results.length} টি গান` : 'কিছু পাওয়া যায়নি';
+      } catch {
+        $('status').textContent = 'সার্চ ব্যর্থ';
+        results=[]; render();
+      }
+    }
+
+    function setTab(v){
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.v===v));
+    }
+    $('tabs').onclick = e => {
+      const b = e.target.closest('.tab'); if(!b) return;
+      view = b.dataset.v; setTab(view);
+      if(view==='queue'){ openQueue(); return; }
+      render();
+    };
+
+    function data(){
+      if(view==='search') return results;
+      if(view==='recent') return recent;
+      if(view==='fav') return favs;
+      return [];
+    }
+
+    function render(){
+      const arr = data();
+      const labels = {search:'সার্চ রেজাল্ট', recent:'রিসেন্ট', fav:'ফেভারিট'};
+      $('label').textContent = labels[view]||'লিস্ট';
+      $('list').querySelectorAll('.track-card').forEach(c=>c.remove());
+      if(!arr.length){
+        $('empty').style.display='block';
+        $('empty').querySelector('p').textContent =
+          view==='fav'?'কোনো ফেভারিট নেই': view==='recent'?'এখনো কিছু বাজাওনি':'সার্চ করে গান খুঁজে নাও';
+        return;
+      }
+      $('empty').style.display='none';
+      arr.forEach((t,i)=>{
+        const card = document.createElement('div');
+        const act = queue[idx] && tid(queue[idx])===tid(t);
+        card.className = 'track-card'+(act?' active':'');
+        card.innerHTML = `
+          <img class="track-art" src="${t.artwork||''}" loading="lazy"
+            onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22%3E%3Crect fill=%22%2314141e%22 width=%2280%22 height=%2280%22/%3E%3C/svg%3E'"/>
+          <div class="track-info">
+            <div class="track-title">${esc(t.title)}</div>
+            <div class="track-artist">${esc((t.artistNames||[]).join(', '))}</div>
+          </div>
+          <div class="track-actions">
+            <button class="mini fav ${isFav(t)?'active':''}" data-id="${tid(t)}">♥</button>
+            <button class="mini dl">↓</button>
+          </div>
+          <div class="track-duration">${fmt(t.duration)}</div>`;
+        card.querySelector('.fav').onclick = e => { e.stopPropagation(); toggleFav(t); };
+        card.querySelector('.dl').onclick = e => { e.stopPropagation(); openDownload(t); };
+        card.onclick = () => { queue=[...arr]; play(i); };
+        $('list').appendChild(card);
+      });
+    }
+
+    // Playback
+    function play(i){
+      if(i<0||i>=queue.length) return;
+      idx=i; const t=queue[i];
+      addRecent(t);
+      updateNow(t);
+      $('player').classList.add('show');
+      const url = `${API}/track/${tid(t)}?quality=${streamQuality}`;
+      audio.src = url;
+      audio.playbackRate = speed;
+      audio.play().then(()=>{ playing=true; syncPlayBtns(); setupMedia(t); }).catch(()=>toast('প্লে ব্যর্থ'));
+      render();
+    }
+    function updateNow(t){
+      $('sideEmpty').style.display='none';
+      $('sideArt').style.display='block';
+      $('sideMeta').style.display='block';
+      $('sideArt').src = t.artwork||'';
+      $('sideTitle').textContent = t.title||'—';
+      $('sideArtist').textContent = (t.artistNames||[]).join(', ')||'—';
+      $('pArt').src = t.artwork||'';
+      $('pTitle').textContent = t.title||'—';
+      $('pArtist').textContent = (t.artistNames||[]).join(', ')||'—';
+      $('fsArt').src = t.artwork||'';
+      $('fsTitle').textContent = t.title||'—';
+      $('fsArtist').textContent = (t.artistNames||[]).join(', ')||'—';
+      updateFavUI(t);
+    }
+    function syncPlayBtns(){
+      const icon = playing ? '⏸' : '▶';
+      $('btnPlay').textContent = icon;
+      $('fsPlay').textContent = icon;
+    }
+    function next(){
+      if(!queue.length) return;
+      if(repeat===2){ play(idx); return; }
+      let n = shuffle ? Math.floor(Math.random()*queue.length) : idx+1;
+      if(n>=queue.length){ if(repeat===1) n=0; else { playing=false; syncPlayBtns(); return; } }
+      play(n);
+    }
+    function prev(){
+      if(audio.currentTime>3){ audio.currentTime=0; return; }
+      if(idx>0) play(idx-1);
+    }
+
+    $('btnPlay').onclick = () => {
+      if(!audio.src) return;
+      if(playing){ audio.pause(); playing=false; } else { audio.play(); playing=true; }
+      syncPlayBtns();
+    };
+    $('fsPlay').onclick = $('btnPlay').onclick;
+    $('btnNext').onclick = next; $('fsNext').onclick = next;
+    $('btnPrev').onclick = prev; $('fsPrev').onclick = prev;
+    $('btnShuf').onclick = $('fsShuf').onclick = () => {
+      shuffle=!shuffle;
+      $('btnShuf').classList.toggle('active',shuffle);
+      $('fsShuf').classList.toggle('active',shuffle);
+      toast(shuffle?'Shuffle চালু':'Shuffle বন্ধ');
+    };
+    $('btnRep').onclick = $('fsRep').onclick = () => {
+      repeat=(repeat+1)%3;
+      $('btnRep').classList.toggle('active',repeat>0);
+      $('fsRep').classList.toggle('active',repeat>0);
+      toast(['Repeat বন্ধ','Repeat All','Repeat One'][repeat]);
+    };
+
+    // Progress
+    audio.ontimeupdate = () => {
+      if(!audio.duration) return;
+      const p = (audio.currentTime/audio.duration)*100;
+      $('fill').style.width = p+'%';
+      $('fsFill').style.width = p+'%';
+      $('tCur').textContent = fmtS(audio.currentTime);
+      $('tTot').textContent = fmtS(audio.duration);
+      $('fsCur').textContent = fmtS(audio.currentTime);
+      $('fsTot').textContent = fmtS(audio.duration);
+    };
+    audio.onended = next;
+    audio.onplay = ()=>{ playing=true; syncPlayBtns(); };
+    audio.onpause = ()=>{ playing=false; syncPlayBtns(); };
+
+    function seek(bar, e){
+      if(!audio.duration) return;
+      const r = bar.getBoundingClientRect();
+      audio.currentTime = ((e.clientX-r.left)/r.width)*audio.duration;
+    }
+    $('prog').onclick = e => seek($('prog'), e);
+    $('fsProg').onclick = e => seek($('fsProg'), e);
+
+    audio.volume = 0.85;
+    $('volBar').onclick = e => {
+      const r = $('volBar').getBoundingClientRect();
+      const v = Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+      audio.volume = v;
+      $('volFill').style.width = (v*100)+'%';
+    };
+
+    // Fullscreen
+    $('openFs').onclick = () => { if(queue[idx]) $('fs').classList.add('open'); };
+    $('btnExpand').onclick = () => $('fs').classList.add('open');
+    $('fsClose').onclick = () => $('fs').classList.remove('open');
+
+    // Download
+    function openDownload(t){
+      dlTrack = t;
+      $('dlOverlay').classList.add('open');
+    }
+    $('dlClose').onclick = () => $('dlOverlay').classList.remove('open');
+    $('dlOverlay').onclick = e => { if(e.target===$('dlOverlay')) $('dlOverlay').classList.remove('open'); };
+    $('qList').onclick = e => {
+      const item = e.target.closest('.q-item'); if(!item) return;
+      document.querySelectorAll('.q-item').forEach(x=>x.classList.remove('selected'));
+      item.classList.add('selected');
+      dlQuality = item.dataset.q;
+    };
+    $('dlConfirm').onclick = () => {
+      if(!dlTrack) return;
+      const id = tid(dlTrack);
+      const url = `${API}/track/${id}?quality=${dlQuality}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(dlTrack.artistNames||['Unknown'])[0]} - ${dlTrack.title||'track'}.flac`;
+      a.target = '_blank';
+      document.body.appendChild(a); a.click(); a.remove();
+      $('dlOverlay').classList.remove('open');
+      toast(`ডাউনলোড শুরু (${dlQuality})`);
+    };
+    $('btnDlSide').onclick = () => { if(queue[idx]) openDownload(queue[idx]); };
+    $('fsDl').onclick = () => { if(queue[idx]) openDownload(queue[idx]); };
+
+    // Track Info
+    function openInfo(t){
+      if(!t) return;
+      const dur = fmt(t.duration);
+      const artists = (t.artistNames||[]).join(', ') || '—';
+      const body = $('infoBody');
+      body.innerHTML = `
+        <div style="display:flex;gap:14px;margin-bottom:14px;align-items:center">
+          <img src="${t.artwork||''}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;background:#14141e"
+            onerror="this.style.display='none'"/>
+          <div>
+            <div style="font-weight:600;font-size:1rem">${esc(t.title)}</div>
+            <div style="color:var(--muted);font-size:0.85rem;margin-top:2px">${esc(artists)}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:0.82rem">
+          <div><span style="color:var(--muted)">Duration</span><br><b>${dur}</b></div>
+          <div><span style="color:var(--muted)">Explicit</span><br><b>${t.explicit ? 'Yes' : 'No'}</b></div>
+          <div><span style="color:var(--muted)">Playable</span><br><b>${t.playable ? 'Yes' : 'No'}</b></div>
+          <div><span style="color:var(--muted)">Quality</span><br><b>${streamQuality}</b></div>
+          <div style="grid-column:1/-1"><span style="color:var(--muted)">ISRC</span><br><b style="word-break:break-all">${esc(t.isrc||'—')}</b></div>
+          <div style="grid-column:1/-1"><span style="color:var(--muted)">Track ID</span><br><b style="word-break:break-all;font-size:0.75rem">${esc(tid(t))}</b></div>
+          <div style="grid-column:1/-1"><span style="color:var(--muted)">Release ID</span><br><b style="word-break:break-all;font-size:0.75rem">${esc(t.releaseId||'—')}</b></div>
+          <div style="grid-column:1/-1"><span style="color:var(--muted)">Recording ID</span><br><b style="word-break:break-all;font-size:0.75rem">${esc(t.recordingId||'—')}</b></div>
+        </div>
+        <button class="chip" id="copyIsrc" style="width:100%;justify-content:center;margin-top:14px;padding:10px">
+          ISRC কপি করো
+        </button>
+      `;
+      $('infoOverlay').classList.add('open');
+      $('copyIsrc').onclick = () => {
+        if(t.isrc){ navigator.clipboard?.writeText(t.isrc); toast('ISRC কপি হয়েছে'); }
+        else toast('ISRC নেই');
+      };
+    }
+    $('fsInfo').onclick = () => { if(queue[idx]) openInfo(queue[idx]); };
+    $('btnInfoSide').onclick = () => { if(queue[idx]) openInfo(queue[idx]); };
+    $('infoClose').onclick = () => $('infoOverlay').classList.remove('open');
+    $('infoOverlay').onclick = e => { if(e.target===$('infoOverlay')) $('infoOverlay').classList.remove('open'); };
+
+    // Lyrics (via LRCLIB)
+    let syncedLines = [];
+    let lyricsRAF = null;
+
+    function parseLRC(lrc) {
+      if (!lrc) return [];
+      const lines = [];
+      const re = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/g;
+      let m;
+      while ((m = re.exec(lrc)) !== null) {
+        const min = parseInt(m[1], 10);
+        const sec = parseInt(m[2], 10);
+        const ms = m[3] ? parseInt(m[3].padEnd(3, '0').slice(0, 3), 10) : 0;
+        const time = min * 60 + sec + ms / 1000;
+        const text = m[4].trim();
+        if (text) lines.push({ time, text });
+      }
+      return lines.sort((a, b) => a.time - b.time);
+    }
+
+    async function openLyrics(t) {
+      if (!t) return;
+      const body = $('lyricsBody');
+      body.innerHTML = '<div style="color:var(--muted)"><span class="loader"></span> লিরিক্স লোড হচ্ছে...</div>';
+      $('lyricsOverlay').classList.add('open');
+      syncedLines = [];
+      if (lyricsRAF) cancelAnimationFrame(lyricsRAF);
+
+      const artist = (t.artistNames || [])[0] || '';
+      const title = t.title || '';
+      const durationSec = t.duration ? Math.round(t.duration / 1000) : 0;
+
+      try {
+        // Try exact get first
+        let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`;
+        if (durationSec) url += `&duration=${durationSec}`;
+        let res = await fetch(url);
+        let data = null;
+        if (res.ok) data = await res.json();
+
+        // Fallback search
+        if (!data || (!data.plainLyrics && !data.syncedLyrics)) {
+          const sRes = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title + ' ' + artist)}`);
+          const arr = await sRes.json();
+          if (Array.isArray(arr) && arr.length) {
+            // Prefer one with lyrics and close duration
+            data = arr.find(x => x.syncedLyrics || x.plainLyrics) || arr[0];
+          }
+        }
+
+        if (!data || (!data.plainLyrics && !data.syncedLyrics)) {
+          body.innerHTML = '<div style="color:var(--muted);padding:30px 10px">লিরিক্স পাওয়া যায়নি</div>';
+          return;
+        }
+
+        if (data.syncedLyrics) {
+          syncedLines = parseLRC(data.syncedLyrics);
+          body.innerHTML = syncedLines.map((l, i) =>
+            `<div class="lrc-line" data-i="${i}" style="padding:4px 8px;border-radius:8px;transition:.2s;opacity:.45">${esc(l.text)}</div>`
+          ).join('');
+          syncLyricsHighlight();
+        } else {
+          body.textContent = data.plainLyrics || 'লিরিক্স নেই';
+        }
+      } catch (err) {
+        console.error(err);
+        body.innerHTML = '<div style="color:var(--muted);padding:30px 10px">লিরিক্স লোড করতে সমস্যা হয়েছে</div>';
+      }
+    }
+
+    function syncLyricsHighlight() {
+      if (!syncedLines.length || !$('lyricsOverlay').classList.contains('open')) return;
+      const t = audio.currentTime;
+      let cur = -1;
+      for (let i = 0; i < syncedLines.length; i++) {
+        if (syncedLines[i].time <= t) cur = i;
+        else break;
+      }
+      document.querySelectorAll('.lrc-line').forEach((el, i) => {
+        if (i === cur) {
+          el.style.opacity = '1';
+          el.style.color = 'var(--accent)';
+          el.style.fontWeight = '600';
+          el.style.background = 'rgba(139,124,255,0.12)';
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        } else {
+          el.style.opacity = '0.4';
+          el.style.color = '';
+          el.style.fontWeight = '';
+          el.style.background = '';
+        }
+      });
+      lyricsRAF = requestAnimationFrame(syncLyricsHighlight);
+    }
+
+    $('fsLyrics').onclick = () => { if (queue[idx]) openLyrics(queue[idx]); };
+    $('btnLyricsSide').onclick = () => { if (queue[idx]) openLyrics(queue[idx]); };
+    $('lyricsClose').onclick = () => {
+      $('lyricsOverlay').classList.remove('open');
+      if (lyricsRAF) cancelAnimationFrame(lyricsRAF);
+    };
+    $('lyricsOverlay').onclick = e => {
+      if (e.target === $('lyricsOverlay')) {
+        $('lyricsOverlay').classList.remove('open');
+        if (lyricsRAF) cancelAnimationFrame(lyricsRAF);
+      }
+    };
+
+    // Stream Quality
+    $('fsQuality').onclick = () => $('sqOverlay').classList.add('open');
+    $('sqClose').onclick = () => $('sqOverlay').classList.remove('open');
+    $('sqOverlay').onclick = e => { if(e.target===$('sqOverlay')) $('sqOverlay').classList.remove('open'); };
+    $('sqList').onclick = e => {
+      const item = e.target.closest('.q-item'); if(!item) return;
+      document.querySelectorAll('#sqList .q-item').forEach(x=>x.classList.remove('selected'));
+      item.classList.add('selected');
+      streamQuality = item.dataset.q;
+      $('fsQuality').textContent = '♪ ' + streamQuality;
+      toast('Stream Quality: ' + streamQuality);
+      // Re-play current track with new quality
+      if(queue[idx] && playing) play(idx);
+      $('sqOverlay').classList.remove('open');
+    };
+
+    // Favorites side
+    $('btnFavSide').onclick = () => { if(queue[idx]) toggleFav(queue[idx]); };
+    $('fsFav').onclick = () => { if(queue[idx]) toggleFav(queue[idx]); };
+
+    // Queue
+    function openQueue(){
+      const body = $('queueBody');
+      body.innerHTML = '';
+      if(!queue.length){ body.innerHTML='<div class="empty"><p>Queue খালি</p></div>'; }
+      else {
+        queue.forEach((t,i)=>{
+          const d = document.createElement('div');
+          d.className = 'track-card'+(i===idx?' active':'');
+          d.style.padding='8px';
+          d.innerHTML = `<img class="track-art" style="width:38px;height:38px" src="${t.artwork||''}"/>
+            <div class="track-info"><div class="track-title">${esc(t.title)}</div>
+            <div class="track-artist">${esc((t.artistNames||[]).join(', '))}</div></div>`;
+          d.onclick = ()=>{ play(i); openQueue(); };
+          body.appendChild(d);
+        });
+      }
+      $('queueOverlay').classList.add('open');
+    }
+    $('fsQueue').onclick = openQueue;
+    $('queueClose').onclick = () => $('queueOverlay').classList.remove('open');
+    $('queueOverlay').onclick = e => { if(e.target===$('queueOverlay')) $('queueOverlay').classList.remove('open'); };
+
+    // Speed
+    function setSpeed(s){
+      speed = parseFloat(s);
+      audio.playbackRate = speed;
+      $('btnSpeed').textContent = speed+'x';
+      $('fsSpeed').textContent = speed+'x Speed';
+      document.querySelectorAll('.speed-opt').forEach(b => b.classList.toggle('selected', parseFloat(b.dataset.s)===speed));
+      toast('Speed '+speed+'x');
+    }
+    $('btnSpeed').onclick = () => $('speedOverlay').classList.add('open');
+    $('fsSpeed').onclick = () => $('speedOverlay').classList.add('open');
+    $('speedClose').onclick = () => $('speedOverlay').classList.remove('open');
+    document.querySelectorAll('.speed-opt').forEach(b => b.onclick = () => { setSpeed(b.dataset.s); $('speedOverlay').classList.remove('open'); });
+
+    // Sleep
+    function setSleep(m){
+      clearTimeout(sleepTimer);
+      sleepMin = m;
+      if(m<=0){ toast('Sleep Timer বন্ধ'); return; }
+      toast(`Sleep Timer ${m} মিনিট`);
+      sleepTimer = setTimeout(()=>{ audio.pause(); playing=false; syncPlayBtns(); toast('Sleep Timer শেষ'); }, m*60*1000);
+    }
+    $('btnSleep').onclick = () => $('sleepOverlay').classList.add('open');
+    $('fsSleep').onclick = () => $('sleepOverlay').classList.add('open');
+    $('sleepClose').onclick = () => $('sleepOverlay').classList.remove('open');
+    document.querySelectorAll('.sleep-opt').forEach(b => b.onclick = () => { setSleep(+b.dataset.m); $('sleepOverlay').classList.remove('open'); });
+
+    // Media Session
+    function setupMedia(t){
+      if(!('mediaSession' in navigator)) return;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: t.title||'', artist: (t.artistNames||[]).join(', '),
+        artwork: t.artwork ? [{src:t.artwork, sizes:'300x300'}] : []
+      });
+      navigator.mediaSession.setActionHandler('play', ()=>audio.play());
+      navigator.mediaSession.setActionHandler('pause', ()=>audio.pause());
+      navigator.mediaSession.setActionHandler('previoustrack', prev);
+      navigator.mediaSession.setActionHandler('nexttrack', next);
+    }
+
+    // Keyboard
+    document.onkeydown = e => {
+      if(e.target.tagName==='INPUT') return;
+      if(e.code==='Space'){ e.preventDefault(); $('btnPlay').click(); }
+      if(e.code==='ArrowRight') next();
+      if(e.code==='ArrowLeft') prev();
+    };
+
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
+    render();
+  </script>
+</body>
+</html>
