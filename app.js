@@ -86,6 +86,14 @@ const PROVIDERS = [
     parse: (json) => parseSaavnLikeList(json?.data?.results || json?.results || [], 'js', 'JioSaavn', 'jiosaavn_sumit')
   },
   {
+    id: 'antra_jiosaavn_direct',
+    label: 'Antra JioSaavn Direct',
+    badge: 'Full · Antra JioSaavn',
+    isPreview: false,
+    searchUrl: (q) => `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&q=${encodeURIComponent(q)}&n=25`,
+    parse: (json) => parseSaavnLikeList(json?.results || json?.data?.results || [], 'antra_js', 'Antra JioSaavn', 'antra_jiosaavn_direct')
+  },
+  {
     id: 'piped_ytmusic',
     label: 'YouTube / YT Music (Piped)',
     badge: 'YT Music · Piped',
