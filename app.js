@@ -202,6 +202,103 @@ const PROVIDERS = [
     }
   },
   {
+    id: 'ytdlp_audio_api',
+    label: 'yt-dlp / Cobalt Audio Stream',
+    badge: 'Full · yt-dlp / Cobalt',
+    isPreview: false,
+    search: async (q) => {
+      // Use Piped / Invidious search to find video IDs and resolve direct audio stream via Cobalt / Piped / Invidious
+      const searchBases = [...PIPED_INSTANCES, ...INVIDIOUS_INSTANCES];
+      for (const base of PIPED_INSTANCES) {
+        try {
+          const json = await fetchWithTimeout(
+            `${base}/search?q=${encodeURIComponent(q)}&filter=music_songs`,
+            6500
+          );
+          const items = Array.isArray(json?.items) ? json.items : [];
+          const tracks = items
+            .map((it, idx) => {
+              const videoId = (it.url || '').replace('/watch?v=', '').split('&')[0] || it.id || `ytdlp-${idx}`;
+              return {
+                id: String(videoId),
+                title: decodeHtml(it.title || 'Untitled'),
+                artist: decodeHtml(it.uploaderName || it.artist || 'YouTube'),
+                album: decodeHtml(it.album || ''),
+                year: String(it.uploadedDate || '').slice(0, 4),
+                language: '',
+                quality: 'YT-DLP AUDIO',
+                isPreview: false,
+                duration: Number(it.duration) || 0,
+                cover: it.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+                audioUrl: '',
+                resolveAudio: async () => {
+                  if (!videoId) return '';
+                  // Try Cobalt-style API first, then Piped streams
+                  try {
+                    const cRes = await fetch('https://api.cobalt.tools/', {
+                      method: 'POST',
+                      headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+                        downloadMode: 'audio',
+                        audioFormat: 'mp3'
+                      })
+                    });
+                    if (cRes.ok) {
+                      const cJson = await cRes.json();
+                      if (cJson?.url) return cJson.url;
+                    }
+                  } catch {}
+                  for (const pBase of PIPED_INSTANCES) {
+                    try {
+                      const st = await fetchWithTimeout(`${pBase}/streams/${encodeURIComponent(videoId)}`, 6500);
+                      const audioStreams = Array.isArray(st?.audioStreams) ? st.audioStreams : [];
+                      audioStreams.sort((a, b) => (Number(b.bitrate) || 0) - (Number(a.bitrate) || 0));
+                      if (audioStreams[0]?.url) return audioStreams[0].url;
+                    } catch {}
+                  }
+                  return '';
+                },
+                source: 'yt-dlp Audio',
+                providerId: 'ytdlp_audio_api'
+              };
+            })
+            .filter((t) => t.title && t.id);
+          if (tracks.length > 0) return tracks;
+        } catch {}
+      }
+      return [];
+    }
+  },
+  {
+    id: 'apple_music_catalog',
+    label: 'Apple Music Catalog (apple-music-downloader)',
+    badge: 'Apple Music · Catalog',
+    isPreview: true,
+    searchUrl: (q) => `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=25`,
+    parse: (json) => {
+      const list = json?.results || [];
+      return list.map((item, idx) => ({
+        id: String(item.trackId || `am-${idx}`),
+        title: item.trackName || 'Untitled',
+        artist: item.artistName || 'Unknown Artist',
+        album: item.collectionName || '',
+        year: String(item.releaseDate || '').slice(0, 4),
+        language: item.primaryGenreName || '',
+        quality: 'AAC · Apple Music',
+        isPreview: true,
+        duration: 30,
+        cover: (item.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
+        audioUrl: item.previewUrl || '',
+        source: 'Apple Music',
+        providerId: 'apple_music_catalog'
+      })).filter((t) => t.title && t.audioUrl);
+    }
+  },
+  {
     id: 'monochrome',
     label: 'Monochrome Lossless',
     badge: 'Lossless · monochrome.st',
@@ -360,7 +457,7 @@ const audio = new Audio();
 audio.preload = 'auto';
 
 function getOrderedProviders(allowPreviewInAuto = false) {
-  const previewIds = ['deezer', 'amazon_itunes'];
+  const previewIds = ['deezer', 'amazon_itunes', 'apple_music_catalog'];
   const pool = allowPreviewInAuto || previewIds.includes(state.sourcePref) ? PROVIDERS : FULL_PROVIDERS;
   if (state.sourcePref === 'auto') return pool;
   const chosen = PROVIDERS.find((p) => p.id === state.sourcePref);
@@ -411,12 +508,12 @@ async function executeProviderSearch(provider, queryVariant, allowPreviewFallbac
   if (typeof provider.search === 'function') {
     const rawTracks = await provider.search(queryVariant);
     return (rawTracks || []).filter(
-      (t) => allowPreviewFallback || ['deezer', 'amazon_itunes'].includes(state.sourcePref) || !t.isPreview
+      (t) => allowPreviewFallback || ['deezer', 'amazon_itunes', 'apple_music_catalog'].includes(state.sourcePref) || !t.isPreview
     );
   }
   const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 7500);
   return provider.parse(json).filter(
-    (t) => allowPreviewFallback || ['deezer', 'amazon_itunes'].includes(state.sourcePref) || !t.isPreview
+    (t) => allowPreviewFallback || ['deezer', 'amazon_itunes', 'apple_music_catalog'].includes(state.sourcePref) || !t.isPreview
   );
 }
 
@@ -522,7 +619,7 @@ async function runSearch(rawQuery) {
   state.statusMessage = state.lang === 'bn' ? 'সোর্সগুলো থেকে গান খোঁজা হচ্ছে...' : 'Searching music sources...';
   render();
 
-  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: ['deezer', 'amazon_itunes'].includes(state.sourcePref) });
+  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: ['deezer', 'amazon_itunes', 'apple_music_catalog'].includes(state.sourcePref) });
   if (found) {
     state.results = found.tracks;
     state.activeSourceLabel = found.provider.badge;
