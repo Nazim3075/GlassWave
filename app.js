@@ -94,6 +94,14 @@ const PROVIDERS = [
     parse: (json) => parseSaavnLikeList(json?.results || json?.data?.results || [], 'antra_js', 'Antra JioSaavn', 'antra_jiosaavn_direct')
   },
   {
+    id: 'jiosaavn_rk',
+    label: 'JioSaavn Mirror (jiosaavn-api)',
+    badge: 'Full · JioSaavn Mirror',
+    isPreview: false,
+    searchUrl: (q) => `https://jiosaavn-api-ts83.vercel.app/api/search/songs?query=${encodeURIComponent(q)}&limit=25`,
+    parse: (json) => parseSaavnLikeList(json?.data?.results || json?.results || [], 'js_rk', 'JioSaavn', 'jiosaavn_rk')
+  },
+  {
     id: 'piped_ytmusic',
     label: 'YouTube / YT Music (Piped)',
     badge: 'YT Music · Piped',
@@ -514,7 +522,7 @@ async function runSearch(rawQuery) {
   state.statusMessage = state.lang === 'bn' ? 'সোর্সগুলো থেকে গান খোঁজা হচ্ছে...' : 'Searching music sources...';
   render();
 
-  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: state.sourcePref === 'auto' });
+  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: ['deezer', 'amazon_itunes'].includes(state.sourcePref) });
   if (found) {
     state.results = found.tracks;
     state.activeSourceLabel = found.provider.badge;
