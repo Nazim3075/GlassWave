@@ -371,7 +371,7 @@
     .overlay.open { display: flex; }
     .sheet {
       width: 100%; max-width: 440px;
-      max-height: 75vh;
+      max-height: 82vh;
       background: #111118;
       border: 1px solid var(--border);
       border-radius: 20px 20px 0 0;
@@ -409,6 +409,16 @@
       background: rgba(139,124,255,0.25);
       color: #c4b5ff;
     }
+
+    .cfg-group { margin-bottom: 12px; }
+    .cfg-group label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    .cfg-group input, .cfg-group select {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+      color: var(--text); font-size: 0.85rem; outline: none;
+    }
+    .cfg-group input:focus, .cfg-group select:focus { border-color: var(--accent); }
+    .cfg-group select option { background: #14141e; color: #f0f0f5; }
 
     .toast {
       position: fixed;
@@ -505,7 +515,7 @@
     .fs-title{font-size:1.5rem;letter-spacing:-.02em}
     .chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:999px}
     .chip.active{background:color-mix(in srgb,var(--accent2) 25%,transparent);color:#fbcfe8}
-    .sheet{border-radius:28px 28px 0 0;background:rgba(24,22,38,.78);backdrop-filter:blur(36px) saturate(1.6);-webkit-backdrop-filter:blur(36px) saturate(1.6);border:1px solid rgba(255,255,255,.14)}
+    .sheet{border-radius:28px 28px 0 0;background:rgba(24,22,38,.88);backdrop-filter:blur(36px) saturate(1.6);-webkit-backdrop-filter:blur(36px) saturate(1.6);border:1px solid rgba(255,255,255,.14)}
     .toast{backdrop-filter:blur(20px);border-radius:999px}
     @media(min-width:900px){
       .main{grid-template-columns:1fr 300px}.now-panel{display:flex}
@@ -552,6 +562,7 @@
         </svg>
         <input type="search" id="q" placeholder="গান / আর্টিস্ট সার্চ..." autocomplete="off" />
       </div>
+      <button class="icon-btn" id="btnApi" title="API / Provider Settings" style="font-size:1rem">⚙</button>
       <button class="icon-btn" id="btnLang" title="Language / ভাষা" style="font-size:.78rem;font-weight:700">EN</button>
       <button class="icon-btn" id="btnTheme" title="Theme">🎨</button>
       <button class="icon-btn" id="btnSleep" title="Sleep Timer">⏱</button>
@@ -582,7 +593,7 @@
               <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
             </svg>
             <p>সার্চ করে গান খুঁজে নাও</p>
-            <p style="font-size:0.75rem;margin-top:6px;opacity:.6">Lossless · tracks.monochrome.st</p>
+            <p id="apiSubtitle" style="font-size:0.75rem;margin-top:6px;opacity:.6">Lossless · tracks.monochrome.st</p>
           </div>
         </div>
         <div class="status" id="status"></div>
@@ -670,6 +681,70 @@
       <button class="chip" id="fsQueue">☰ Queue</button>
       <button class="chip" id="fsSpeed">1x Speed</button>
       <button class="chip" id="fsSleep">⏱ Sleep</button>
+    </div>
+  </div>
+
+  <!-- API / Provider Configuration Sheet -->
+  <div class="overlay" id="apiOverlay">
+    <div class="sheet">
+      <h3>API ও প্রোভাইডার কনফিগারেশন <button class="x" id="apiClose">×</button></h3>
+      <div class="sheet-body">
+        <div class="cfg-group">
+          <label>QOBUZ_ID_SECRET (generate with: openssl rand -hex 32)</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="cfgSecret" placeholder="64-character hex secret" />
+            <button class="chip" id="btnGenSecret" type="button" style="white-space:nowrap">Generate</button>
+          </div>
+        </div>
+        <div class="cfg-group">
+          <label>QOBUZ_PROVIDER</label>
+          <select id="cfgProvider">
+            <option value="multi">multi (Default)</option>
+            <option value="qobuzdl">qobuzdl</option>
+            <option value="http">http</option>
+            <option value="stub">stub</option>
+          </select>
+        </div>
+        <div class="cfg-group">
+          <label>Active Endpoint Preset</label>
+          <select id="cfgPreset">
+            <option value="MONOCHROME_BASE_URL">MONOCHROME_BASE_URL (tracks.monochrome.st)</option>
+            <option value="QOBUZ_UPSTREAM_BASE_URL">QOBUZ_UPSTREAM_BASE_URL (qobuz-dll.foreyou.workers.dev)</option>
+            <option value="LASTBABE_BASE_URL">LASTBABE_BASE_URL (lastbabe.velixir.run)</option>
+            <option value="DEEZER_BASE_URL">DEEZER_BASE_URL (dzr.tabs-vs-spaces.wtf)</option>
+            <option value="ELJOHNZC_BASE_URL">ELJOHNZC_BASE_URL (eljohnzc-addon)</option>
+            <option value="INSTABLE_BASE_URL">INSTABLE_BASE_URL (instable.arcod.xyz)</option>
+          </select>
+        </div>
+        <div class="cfg-group">
+          <label>QOBUZ_UPSTREAM_BASE_URL</label>
+          <input type="url" id="cfgQobuzUpstream" />
+        </div>
+        <div class="cfg-group">
+          <label>LASTBABE_BASE_URL</label>
+          <input type="url" id="cfgLastbabe" />
+        </div>
+        <div class="cfg-group">
+          <label>MONOCHROME_BASE_URL</label>
+          <input type="url" id="cfgMonochrome" />
+        </div>
+        <div class="cfg-group">
+          <label>DEEZER_BASE_URL</label>
+          <input type="url" id="cfgDeezer" />
+        </div>
+        <div class="cfg-group">
+          <label>ELJOHNZC_BASE_URL</label>
+          <input type="url" id="cfgEljohnzc" />
+        </div>
+        <div class="cfg-group">
+          <label>INSTABLE_BASE_URL</label>
+          <input type="url" id="cfgInstable" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="chip" id="cfgReset" type="button" style="flex:1;justify-content:center;padding:11px">রিসেট</button>
+          <button class="chip" id="cfgSave" type="button" style="flex:2;justify-content:center;padding:11px;background:var(--accent);border:none;color:#fff;font-weight:600">সেভ করুন</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -799,12 +874,117 @@
   <audio id="audio" preload="metadata"></audio>
 
   <script>
-    const API = 'https://tracks.monochrome.st';
+    // Required & Optional Environment Configuration
+    window.ENV = {
+      // Required
+      QOBUZ_ID_SECRET: '', // generate with: openssl rand -hex 32
+
+      // Optional (defaults shown)
+      QOBUZ_PROVIDER: 'multi', // multi | qobuzdl | http | stub
+      QOBUZ_UPSTREAM_BASE_URL: 'https://qobuz-dll.foreyou.workers.dev',
+      LASTBABE_BASE_URL: 'https://lastbabe.velixir.run',
+      MONOCHROME_BASE_URL: 'https://tracks.monochrome.st',
+      DEEZER_BASE_URL: 'https://dzr.tabs-vs-spaces.wtf',
+      ELJOHNZC_BASE_URL: 'https://eljohnzc-addon.de.deplexo.com/4433c7caff7fd070309e',
+      INSTABLE_BASE_URL: 'https://instable.arcod.xyz'
+    };
+
+    const savedEnv = JSON.parse(localStorage.getItem('gw_env_cfg') || '{}');
+    let ENV = Object.assign({}, window.ENV, savedEnv);
+    let activeKey = localStorage.getItem('gw_active_key') || 'MONOCHROME_BASE_URL';
+    let API = (ENV[activeKey] || ENV.MONOCHROME_BASE_URL).replace(/\/+$/, '');
+
     const $ = id => document.getElementById(id);
     const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const fmt = ms => { if(!ms) return '0:00'; const s=Math.floor(ms/1000); return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; };
     const fmtS = s => { if(!s||isNaN(s)) return '0:00'; return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; };
     const tid = t => String(t.trackId || t.id);
+
+    function genHex32() {
+      const arr = new Uint8Array(32);
+      crypto.getRandomValues(arr);
+      return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function apiHeaders() {
+      const h = {
+        'X-Qobuz-Provider': ENV.QOBUZ_PROVIDER,
+        'X-Qobuz-Upstream-Base-Url': ENV.QOBUZ_UPSTREAM_BASE_URL,
+        'X-Lastbabe-Base-Url': ENV.LASTBABE_BASE_URL,
+        'X-Monochrome-Base-Url': ENV.MONOCHROME_BASE_URL,
+        'X-Deezer-Base-Url': ENV.DEEZER_BASE_URL,
+        'X-Eljohnzc-Base-Url': ENV.ELJOHNZC_BASE_URL,
+        'X-Instable-Base-Url': ENV.INSTABLE_BASE_URL
+      };
+      if (ENV.QOBUZ_ID_SECRET) {
+        h['X-Qobuz-Id-Secret'] = ENV.QOBUZ_ID_SECRET;
+        h['Authorization'] = `Bearer ${ENV.QOBUZ_ID_SECRET}`;
+      }
+      return h;
+    }
+
+    function updateApiSubtitle() {
+      const host = API.replace(/^https?:\/\//, '');
+      if ($('apiSubtitle')) $('apiSubtitle').textContent = `Lossless · ${host}`;
+    }
+    updateApiSubtitle();
+
+    // API Settings UI
+    $('btnApi').onclick = () => {
+      $('cfgSecret').value = ENV.QOBUZ_ID_SECRET || '';
+      $('cfgProvider').value = ENV.QOBUZ_PROVIDER || 'multi';
+      $('cfgPreset').value = activeKey;
+      $('cfgQobuzUpstream').value = ENV.QOBUZ_UPSTREAM_BASE_URL || '';
+      $('cfgLastbabe').value = ENV.LASTBABE_BASE_URL || '';
+      $('cfgMonochrome').value = ENV.MONOCHROME_BASE_URL || '';
+      $('cfgDeezer').value = ENV.DEEZER_BASE_URL || '';
+      $('cfgEljohnzc').value = ENV.ELJOHNZC_BASE_URL || '';
+      $('cfgInstable').value = ENV.INSTABLE_BASE_URL || '';
+      $('apiOverlay').classList.add('open');
+    };
+    $('btnGenSecret').onclick = () => {
+      $('cfgSecret').value = genHex32();
+      toast('নতুন 32-byte hex secret তৈরি হয়েছে');
+    };
+    $('apiClose').onclick = () => $('apiOverlay').classList.remove('open');
+    $('apiOverlay').onclick = e => { if (e.target === $('apiOverlay')) $('apiOverlay').classList.remove('open'); };
+    $('cfgSave').onclick = () => {
+      ENV.QOBUZ_ID_SECRET = $('cfgSecret').value.trim();
+      ENV.QOBUZ_PROVIDER = $('cfgProvider').value;
+      ENV.QOBUZ_UPSTREAM_BASE_URL = $('cfgQobuzUpstream').value.trim().replace(/\/+$/, '');
+      ENV.LASTBABE_BASE_URL = $('cfgLastbabe').value.trim().replace(/\/+$/, '');
+      ENV.MONOCHROME_BASE_URL = $('cfgMonochrome').value.trim().replace(/\/+$/, '');
+      ENV.DEEZER_BASE_URL = $('cfgDeezer').value.trim().replace(/\/+$/, '');
+      ENV.ELJOHNZC_BASE_URL = $('cfgEljohnzc').value.trim().replace(/\/+$/, '');
+      ENV.INSTABLE_BASE_URL = $('cfgInstable').value.trim().replace(/\/+$/, '');
+      activeKey = $('cfgPreset').value;
+      API = (ENV[activeKey] || ENV.MONOCHROME_BASE_URL).replace(/\/+$/, '');
+      window.ENV = ENV;
+      localStorage.setItem('gw_env_cfg', JSON.stringify(ENV));
+      localStorage.setItem('gw_active_key', activeKey);
+      updateApiSubtitle();
+      $('apiOverlay').classList.remove('open');
+      toast('কনফিগারেশন সেভ হয়েছে');
+    };
+    $('cfgReset').onclick = () => {
+      localStorage.removeItem('gw_env_cfg');
+      localStorage.removeItem('gw_active_key');
+      ENV = Object.assign({}, window.ENV, {
+        QOBUZ_ID_SECRET: '',
+        QOBUZ_PROVIDER: 'multi',
+        QOBUZ_UPSTREAM_BASE_URL: 'https://qobuz-dll.foreyou.workers.dev',
+        LASTBABE_BASE_URL: 'https://lastbabe.velixir.run',
+        MONOCHROME_BASE_URL: 'https://tracks.monochrome.st',
+        DEEZER_BASE_URL: 'https://dzr.tabs-vs-spaces.wtf',
+        ELJOHNZC_BASE_URL: 'https://eljohnzc-addon.de.deplexo.com/4433c7caff7fd070309e',
+        INSTABLE_BASE_URL: 'https://instable.arcod.xyz'
+      });
+      activeKey = 'MONOCHROME_BASE_URL';
+      API = ENV.MONOCHROME_BASE_URL;
+      $('btnApi').click();
+      updateApiSubtitle();
+      toast('ডিফল্ট সেটিংস রিসেট হয়েছে');
+    };
 
     let view = 'search', results = [], queue = [], idx = -1;
     let playing = false, shuffle = false, repeat = 0;
@@ -862,7 +1042,9 @@
       $('status').innerHTML = '<span class="loader"></span> সার্চ...';
       $('empty').style.display='none';
       try {
-        const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+        const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}&provider=${encodeURIComponent(ENV.QOBUZ_PROVIDER)}`, {
+          headers: apiHeaders()
+        });
         const d = await r.json();
         results = d.tracks || [];
         render();
@@ -933,7 +1115,7 @@
       addRecent(t);
       updateNow(t);
       $('player').classList.add('show');
-      const url = `${API}/track/${tid(t)}?quality=${streamQuality}`;
+      const url = `${API}/track/${tid(t)}?quality=${streamQuality}&provider=${encodeURIComponent(ENV.QOBUZ_PROVIDER)}`;
       audio.src = url;
       audio.playbackRate = speed;
       audio.play().then(()=>{ playing=true; syncPlayBtns(); setupMedia(t); }).catch(()=>toast('প্লে ব্যর্থ'));
@@ -1044,7 +1226,7 @@
     $('dlConfirm').onclick = () => {
       if(!dlTrack) return;
       const id = tid(dlTrack);
-      const url = `${API}/track/${id}?quality=${dlQuality}`;
+      const url = `${API}/track/${id}?quality=${dlQuality}&provider=${encodeURIComponent(ENV.QOBUZ_PROVIDER)}`;
       const a = document.createElement('a');
       a.href = url;
       a.download = `${(dlTrack.artistNames||['Unknown'])[0]} - ${dlTrack.title||'track'}.flac`;
@@ -1129,19 +1311,16 @@
       const durationSec = t.duration ? Math.round(t.duration / 1000) : 0;
 
       try {
-        // Try exact get first
         let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`;
         if (durationSec) url += `&duration=${durationSec}`;
         let res = await fetch(url);
         let data = null;
         if (res.ok) data = await res.json();
 
-        // Fallback search
         if (!data || (!data.plainLyrics && !data.syncedLyrics)) {
           const sRes = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title + ' ' + artist)}`);
           const arr = await sRes.json();
           if (Array.isArray(arr) && arr.length) {
-            // Prefer one with lyrics and close duration
             data = arr.find(x => x.syncedLyrics || x.plainLyrics) || arr[0];
           }
         }
@@ -1215,7 +1394,6 @@
       streamQuality = item.dataset.q;
       $('fsQuality').textContent = '♪ ' + streamQuality;
       toast('Stream Quality: ' + streamQuality);
-      // Re-play current track with new quality
       if(queue[idx] && playing) play(idx);
       $('sqOverlay').classList.remove('open');
     };
@@ -1459,7 +1637,7 @@
     };
     $('fsDl') && ($('fsQueue').insertAdjacentHTML('afterend','<button class="chip" id="fsMore">⋯ আরও</button>'), $('fsMore').onclick = () => { const t=queue[idx]; if(t) openMenu(t); });
 
-    // Visualizer (decorative, reacts to play/pause)
+    // Visualizer
     const cv=$('vis'), cx=cv.getContext('2d'); let amp=0, ph=0;
     (function drawVis(){
       if($('fs').classList.contains('open')){
@@ -1474,7 +1652,7 @@
       requestAnimationFrame(drawVis);
     })();
 
-    // Gestures: swipe mini player ←/→ = next/prev, swipe down in fullscreen = close
+    // Gestures
     let sx=0, sy=0;
     const touch = (el, fn) => { el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
       el.addEventListener('touchend',e=>fn(e.changedTouches[0].clientX-sx, e.changedTouches[0].clientY-sy),{passive:true}); };
