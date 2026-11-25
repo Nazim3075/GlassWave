@@ -1,7 +1,7 @@
 {
   "name": "GlassWave Music",
   "short_name": "GlassWave",
-  "description": "Standalone music player with lyrics, track info, quality badge, continuous autoplay and multi-source fallback",
+  "description": "Standalone music player with continuous autoplay and multi-source fallback search",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,4 +1,4 @@
-// GlassWave Standalone Player v4 - Quality, Track Info, Lyrics, Shuffle/Repeat & Multi-Source Fallback
+// GlassWave Standalone Player v4.1 - Full Track Priority, Resilient Audio Recovery, Lyrics & Multi-Source Fallback
 
 const STORAGE_KEYS = {
   RECENT: 'glasswave_recent_v1',
@@ -29,12 +29,14 @@ const PROVIDERS = [
           downloads.find((d) => d.quality === '160kbps') ||
           downloads[downloads.length - 1] ||
           null;
-        const bestAudio = bestObj?.url || '';
-        const quality = bestObj?.quality ? bestObj.quality.toUpperCase() : 'FULL';
+        const bestAudio = bestObj?.url || bestObj?.link || '';
+        const quality = bestObj?.quality ? String(bestObj.quality).toUpperCase() : 'FULL';
         const images = Array.isArray(item.image) ? item.image : [];
         const cover =
           images.find((im) => im.quality === '500x500')?.url ||
+          images.find((im) => im.quality === '500x500')?.link ||
           images[images.length - 1]?.url ||
+          images[images.length - 1]?.link ||
           '';
         const primaryArtist =
           item.artists?.primary?.map((a) => a.name).filter(Boolean).join(', ') ||
@@ -74,12 +76,14 @@ const PROVIDERS = [
           downloads.find((d) => d.quality === '160kbps') ||
           downloads[downloads.length - 1] ||
           null;
-        const bestAudio = bestObj?.url || '';
-        const quality = bestObj?.quality ? bestObj.quality.toUpperCase() : 'FULL';
+        const bestAudio = bestObj?.url || bestObj?.link || '';
+        const quality = bestObj?.quality ? String(bestObj.quality).toUpperCase() : 'FULL';
         const images = Array.isArray(item.image) ? item.image : [];
         const cover =
           images.find((im) => im.quality === '500x500')?.url ||
+          images.find((im) => im.quality === '500x500')?.link ||
           images[images.length - 1]?.url ||
+          images[images.length - 1]?.link ||
           '';
         const primaryArtist =
           item.artists?.primary?.map((a) => a.name).filter(Boolean).join(', ') ||
@@ -155,6 +159,8 @@ const PROVIDERS = [
   }
 ];
 
+const FULL_PROVIDERS = PROVIDERS.filter((p) => !p.isPreview);
+
 const RADIO_SEEDS = [
   'Bangla hits song',
   'Arijit Singh hits',
@@ -175,15 +181,10 @@ function decodeHtml(str) {
 function cleanLyricsText(raw) {
   if (!raw) return '';
   return decodeHtml(String(raw))
-    .replace(/<br\s*\/?>/gi, '
-')
-    .replace(/<\/p>/gi, '
-')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/
-{3,}/g, '
-
-')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
@@ -229,23 +230,25 @@ const state = {
   lang: localStorage.getItem(STORAGE_KEYS.LANG_PREF) || 'bn',
   speed: parseFloat(localStorage.getItem(STORAGE_KEYS.SPEED_PREF) || '1'),
   theme: localStorage.getItem(STORAGE_KEYS.THEME_PREF) || 'violet',
-  activeSourceLabel: 'Auto Fallback · Continuous Radio',
+  activeSourceLabel: 'Auto Full Track · Continuous Radio',
   statusMessage: '',
   isLoading: false,
-  settingsOpen: false
+  settingsOpen: false,
+  recoveringStream: false
 };
 
 const audio = new Audio();
 audio.preload = 'auto';
 
-function getOrderedProviders() {
-  if (state.sourcePref === 'auto') return PROVIDERS;
+function getOrderedProviders(allowPreviewInAuto = false) {
+  const pool = allowPreviewInAuto || state.sourcePref === 'itunes' ? PROVIDERS : FULL_PROVIDERS;
+  if (state.sourcePref === 'auto') return pool;
   const chosen = PROVIDERS.find((p) => p.id === state.sourcePref);
-  if (!chosen) return PROVIDERS;
-  return [chosen, ...PROVIDERS.filter((p) => p.id !== state.sourcePref)];
+  if (!chosen) return pool;
+  return [chosen, ...pool.filter((p) => p.id !== state.sourcePref)];
 }
 
-async function fetchWithTimeout(url, ms = 6500) {
+async function fetchWithTimeout(url, ms = 7500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -265,16 +268,16 @@ function buildSearchQueries(rawQuery) {
   return [q];
 }
 
-async function fetchTracksFromProviders(rawQuery) {
+async function fetchTracksFromProviders(rawQuery, { allowPreviewFallback = false } = {}) {
   const candidateQueries = buildSearchQueries(rawQuery);
-  const orderedProviders = getOrderedProviders();
+  const orderedProviders = getOrderedProviders(allowPreviewFallback);
   const strictSingleSource = state.sourcePref !== 'auto';
 
   for (const queryVariant of candidateQueries) {
     for (const provider of orderedProviders) {
       try {
-        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 6500);
-        const tracks = provider.parse(json);
+        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 7500);
+        const tracks = provider.parse(json).filter((t) => allowPreviewFallback || state.sourcePref === 'itunes' || !t.isPreview);
         if (Array.isArray(tracks) && tracks.length > 0) {
           return { tracks, provider, fallbackUsed: false };
         }
@@ -285,14 +288,14 @@ async function fetchTracksFromProviders(rawQuery) {
     }
   }
 
-  // If user selected a specific source and it returned empty/failed, fall back to other sources
   if (strictSingleSource) {
+    const fallbackPool = allowPreviewFallback ? PROVIDERS : FULL_PROVIDERS;
     for (const queryVariant of candidateQueries) {
-      for (const provider of PROVIDERS) {
+      for (const provider of fallbackPool) {
         if (provider.id === state.sourcePref) continue;
         try {
-          const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 6500);
-          const tracks = provider.parse(json);
+          const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 7500);
+          const tracks = provider.parse(json).filter((t) => allowPreviewFallback || !t.isPreview);
           if (Array.isArray(tracks) && tracks.length > 0) {
             return { tracks, provider, fallbackUsed: true };
           }
@@ -320,7 +323,6 @@ async function loadLyricsForTrack(track) {
   state.lyricsText = '';
   renderPlayerBar();
 
-  // 1) Try provider lyrics endpoint if track has Saavn/JioSaavn ID
   const provider = PROVIDERS.find((p) => p.id === track.providerId);
   if (provider && provider.lyricsUrl && track.id) {
     try {
@@ -336,9 +338,10 @@ async function loadLyricsForTrack(track) {
     } catch {}
   }
 
-  // 2) Fallback to lrclib public lyrics API
   try {
-    const artistParam = track.artist && track.artist !== 'Unknown Artist' ? `&artist_name=${encodeURIComponent(track.artist.split(',')[0].trim())}` : '';
+    const artistParam = track.artist && track.artist !== 'Unknown Artist'
+      ? `&artist_name=${encodeURIComponent(track.artist.split(',')[0].trim())}`
+      : '';
     const lrclibUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(track.title)}${artistParam}`;
     const lrc = await fetchWithTimeout(lrclibUrl, 4500);
     const cleaned = cleanLyricsText(lrc?.plainLyrics || lrc?.syncedLyrics || '');
@@ -366,21 +369,21 @@ async function runSearch(rawQuery) {
 
   state.query = q;
   state.isLoading = true;
-  state.statusMessage = state.lang === 'bn' ? 'সোর্স থেকে গান খোঁজা হচ্ছে...' : 'Searching sources...';
+  state.statusMessage = state.lang === 'bn' ? 'পূর্ণাঙ্গ সোর্স থেকে গান খোঁজা হচ্ছে...' : 'Searching full track sources...';
   render();
 
-  const found = await fetchTracksFromProviders(q);
+  const found = await fetchTracksFromProviders(q, { allowPreviewFallback: false });
   if (found) {
     state.results = found.tracks;
     state.activeSourceLabel = found.provider.badge;
     if (state.lang === 'bn') {
       state.statusMessage = found.fallbackUsed
-        ? `নির্বাচিত সোর্সে ফলাফল না থাকায় ${found.provider.label} থেকে ${found.tracks.length}টি গান দেখানো হচ্ছে`
-        : `${found.tracks.length}টি গান পাওয়া গেছে · ${found.provider.label}`;
+        ? `নির্বাচিত সোর্সে ফলাফল না থাকায় ${found.provider.label} থেকে ${found.tracks.length}টি পূর্ণাঙ্গ গান দেখানো হচ্ছে`
+        : `${found.tracks.length}টি পূর্ণাঙ্গ গান পাওয়া গেছে · ${found.provider.label}`;
     } else {
       state.statusMessage = found.fallbackUsed
-        ? `Fallback to ${found.provider.label}: ${found.tracks.length} tracks found`
-        : `${found.tracks.length} tracks found · ${found.provider.label}`;
+        ? `Fallback to ${found.provider.label}: ${found.tracks.length} full tracks found`
+        : `${found.tracks.length} full tracks found · ${found.provider.label}`;
     }
     state.isLoading = false;
     render();
@@ -391,8 +394,8 @@ async function runSearch(rawQuery) {
   state.isLoading = false;
   state.statusMessage =
     state.lang === 'bn'
-      ? 'কোনো সোর্স থেকে গান পাওয়া যায়নি। ইংরেজিতে নাম লিখে বা অন্য সোর্স বেছে চেষ্টা করুন।'
-      : 'No results found. Try English keywords or switch source in Settings.';
+      ? 'পূর্ণাঙ্গ সোর্স থেকে গান পাওয়া যায়নি। ইংরেজিতে নাম লিখে বা সেটিংস থেকে অন্য সোর্স চেষ্টা করুন।'
+      : 'No full tracks found. Try English keywords or switch source in Settings.';
   render();
 }
 
@@ -406,7 +409,7 @@ async function appendRadioTracks(seedTrack) {
     : [...RADIO_SEEDS];
 
   for (const seed of seeds) {
-    const found = await fetchTracksFromProviders(seed);
+    const found = await fetchTracksFromProviders(seed, { allowPreviewFallback: false });
     if (found && found.tracks.length > 0) {
       const fresh = found.tracks.filter((t) => {
         const key = `${t.source}:${t.id}:${t.title}`;
@@ -421,6 +424,36 @@ async function appendRadioTracks(seedTrack) {
     }
   }
   return false;
+}
+
+function attachAudioSource(track, resumeAtSec = 0) {
+  audio.pause();
+  audio.removeAttribute('src');
+  audio.load();
+  audio.src = track.audioUrl;
+  audio.playbackRate = state.speed;
+
+  const startPlayback = () => {
+    if (resumeAtSec > 0 && isFinite(audio.duration) && resumeAtSec < audio.duration - 2) {
+      try {
+        audio.currentTime = resumeAtSec;
+      } catch {}
+    }
+    audio.play().then(() => {
+      state.isPlaying = true;
+      state.recoveringStream = false;
+      renderPlayerBar();
+    }).catch(() => {
+      state.isPlaying = false;
+      renderPlayerBar();
+    });
+  };
+
+  if (resumeAtSec > 0) {
+    audio.addEventListener('loadedmetadata', startPlayback, { once: true });
+  } else {
+    startPlayback();
+  }
 }
 
 function playTrack(track, listContext = null, { keepQueue = false } = {}) {
@@ -441,16 +474,8 @@ function playTrack(track, listContext = null, { keepQueue = false } = {}) {
   }
 
   const activeTrack = state.queue[state.currentIndex] || track;
-  audio.src = activeTrack.audioUrl;
-  audio.playbackRate = state.speed;
-  audio.play().then(() => {
-    state.isPlaying = true;
-    renderPlayerBar();
-  }).catch(() => {
-    state.isPlaying = false;
-    renderPlayerBar();
-  });
-
+  state.recoveringStream = false;
+  attachAudioSource(activeTrack, 0);
   loadLyricsForTrack(activeTrack);
 
   if (state.autoRadio && state.currentIndex >= state.queue.length - 2) {
@@ -474,13 +499,15 @@ function togglePlayPause(e) {
     return;
   }
   if (audio.paused) {
-    audio.play().catch(() => {});
-    state.isPlaying = true;
+    audio.play().then(() => {
+      state.isPlaying = true;
+      renderPlayerBar();
+    }).catch(() => {});
   } else {
     audio.pause();
     state.isPlaying = false;
+    renderPlayerBar();
   }
-  renderPlayerBar();
 }
 
 async function playNext(e, fromEnded = false) {
@@ -545,7 +572,51 @@ function isFavorite(track) {
   return state.favorites.some((f) => f.id === track.id && f.source === track.source);
 }
 
+async function recoverDroppedStream() {
+  const current = getCurrentTrack();
+  if (!current || state.recoveringStream) return;
+  state.recoveringStream = true;
+  const savedTime = audio.currentTime > 1 ? audio.currentTime : 0;
+
+  try {
+    const found = await fetchTracksFromProviders(`${current.title} ${current.artist}`, { allowPreviewFallback: false });
+    if (found && found.tracks.length > 0) {
+      const match =
+        found.tracks.find((t) => t.title.toLowerCase() === current.title.toLowerCase()) ||
+        found.tracks[0];
+      if (match && match.audioUrl) {
+        current.audioUrl = match.audioUrl;
+        current.source = match.source;
+        current.quality = match.quality || current.quality;
+        attachAudioSource(current, savedTime);
+        return;
+      }
+    }
+  } catch {}
+
+  state.recoveringStream = false;
+  playNext(null, true);
+}
+
 audio.addEventListener('ended', () => playNext(null, true));
+
+audio.addEventListener('error', () => {
+  if (state.isPlaying) {
+    recoverDroppedStream();
+  }
+});
+
+audio.addEventListener('play', () => {
+  state.isPlaying = true;
+  renderPlayerBar();
+});
+
+audio.addEventListener('pause', () => {
+  if (!audio.ended && !state.recoveringStream) {
+    state.isPlaying = false;
+    renderPlayerBar();
+  }
+});
 
 audio.addEventListener('timeupdate', () => {
   const prog = document.getElementById('gw-progress');
@@ -869,7 +940,7 @@ function render() {
           <div class="setting-row">
             <label>${isBn ? 'মিউজিক সোর্স (Fallback)' : 'Music Source'}</label>
             <select id="gw-source-select">
-              <option value="auto" ${state.sourcePref === 'auto' ? 'selected' : ''}>${isBn ? 'অটো ফলব্যাক (সর্বোত্তম সোর্স)' : 'Auto Fallback (Recommended)'}</option>
+              <option value="auto" ${state.sourcePref === 'auto' ? 'selected' : ''}>${isBn ? 'অটো ফলব্যাক (শুধু পূর্ণাঙ্গ গান)' : 'Auto Fallback (Full Tracks Only)'}</option>
               ${PROVIDERS.map((p) => `<option value="${p.id}" ${state.sourcePref === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}
             </select>
           </div>
