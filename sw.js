@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glasswave-standalone-v3';
+const CACHE_NAME = 'glasswave-standalone-v4';
 const CORE_ASSETS = [
   './',
   './index.html',

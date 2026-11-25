@@ -44,7 +44,7 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding-bottom: 170px;
+      padding-bottom: 175px;
     }
 
     .topbar {
@@ -55,7 +55,7 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background: rgba(11, 9, 18, 0.9);
+      background: rgba(11, 9, 18, 0.92);
       backdrop-filter: blur(14px);
     }
 
@@ -221,6 +221,7 @@
       font-size: 13px;
       color: var(--muted);
       margin-bottom: 12px;
+      line-height: 1.45;
     }
 
     .empty-state {
@@ -303,6 +304,27 @@
       overflow: hidden;
       text-overflow: ellipsis;
       margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .q-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(168, 85, 247, 0.22);
+      color: #e9d5ff;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+
+    .q-badge.preview {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fde68a;
+      border-color: rgba(245, 158, 11, 0.35);
     }
 
     .track-actions {
@@ -353,8 +375,8 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 22px 20px 34px;
-      background: linear-gradient(180deg, var(--surface-2) 0%, var(--bg) 72%);
+      padding: 20px 18px 32px;
+      background: linear-gradient(180deg, var(--surface-2) 0%, var(--bg) 75%);
       cursor: default;
       overflow-y: auto;
     }
@@ -371,52 +393,99 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin: 10px 0;
+      margin: 8px 0;
     }
 
     .expanded-art {
-      width: 220px;
-      height: 220px;
-      border-radius: 24px;
+      width: 188px;
+      height: 188px;
+      border-radius: 22px;
       object-fit: cover;
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .expanded-title {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .expanded-artist {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .info-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .info-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--text);
+    }
+
+    .lyrics-box {
+      width: 100%;
+      max-height: 155px;
+      overflow-y: auto;
+      background: rgba(11, 9, 18, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 13px;
+      text-align: left;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre-line;
+    }
+
+    .lyrics-muted {
+      color: var(--muted);
+      font-style: italic;
     }
 
     .expanded-controls {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      margin-top: 14px;
+      gap: 12px;
+      margin-top: 12px;
       flex-wrap: wrap;
     }
 
     .ctrl-btn.big {
-      width: 54px;
-      height: 54px;
-      font-size: 19px;
+      width: 52px;
+      height: 52px;
+      font-size: 18px;
+    }
+
+    .ctrl-btn.mode-btn {
+      width: auto;
+      padding: 0 12px;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .ctrl-btn.mode-btn.active {
       border-color: var(--accent);
-      background: rgba(168, 85, 247, 0.25);
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(236, 72, 153, 0.28));
       color: #fff;
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
     }
 
     .up-next-box {
-      margin-top: 16px;
+      margin-top: 12px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
       border-radius: 14px;

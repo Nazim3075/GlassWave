@@ -1,4 +1,4 @@
-// GlassWave Standalone Player - Continuous Radio/Autoplay, Shuffle/Repeat & Multi-Source Fallback
+// GlassWave Standalone Player v4 - Quality, Track Info, Lyrics, Shuffle/Repeat & Multi-Source Fallback
 
 const STORAGE_KEYS = {
   RECENT: 'glasswave_recent_v1',
@@ -17,16 +17,20 @@ const PROVIDERS = [
     id: 'saavn_dev',
     label: 'Saavn Full Track',
     badge: 'Full · saavn.dev',
+    isPreview: false,
     searchUrl: (q) => `https://saavn.dev/api/search/songs?query=${encodeURIComponent(q)}&limit=25`,
+    lyricsUrl: (id) => `https://saavn.dev/api/songs/${encodeURIComponent(id)}/lyrics`,
     parse: (json) => {
       const list = json?.data?.results || [];
       return list.map((item, idx) => {
         const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
-        const bestAudio =
-          downloads.find((d) => d.quality === '320kbps')?.url ||
-          downloads.find((d) => d.quality === '160kbps')?.url ||
-          downloads[downloads.length - 1]?.url ||
-          '';
+        const bestObj =
+          downloads.find((d) => d.quality === '320kbps') ||
+          downloads.find((d) => d.quality === '160kbps') ||
+          downloads[downloads.length - 1] ||
+          null;
+        const bestAudio = bestObj?.url || '';
+        const quality = bestObj?.quality ? bestObj.quality.toUpperCase() : 'FULL';
         const images = Array.isArray(item.image) ? item.image : [];
         const cover =
           images.find((im) => im.quality === '500x500')?.url ||
@@ -37,14 +41,19 @@ const PROVIDERS = [
           item.primaryArtists ||
           'Unknown Artist';
         return {
-          id: item.id || `saavn-${idx}`,
+          id: String(item.id || `saavn-${idx}`),
           title: decodeHtml(item.name || item.title || 'Untitled'),
           artist: decodeHtml(primaryArtist),
           album: decodeHtml(item.album?.name || ''),
+          year: String(item.year || item.releaseDate || '').slice(0, 4),
+          language: decodeHtml(item.language || ''),
+          quality,
+          isPreview: false,
           duration: Number(item.duration) || 0,
           cover,
           audioUrl: bestAudio,
-          source: 'Saavn'
+          source: 'Saavn',
+          providerId: 'saavn_dev'
         };
       }).filter((t) => t.title && t.audioUrl);
     }
@@ -53,16 +62,20 @@ const PROVIDERS = [
     id: 'jiosaavn_sumit',
     label: 'JioSaavn Full Mirror',
     badge: 'Full · jiosaavn-api',
+    isPreview: false,
     searchUrl: (q) => `https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=${encodeURIComponent(q)}&limit=25`,
+    lyricsUrl: (id) => `https://jiosaavn-api-privatecvc2.vercel.app/lyrics?id=${encodeURIComponent(id)}`,
     parse: (json) => {
       const list = json?.data?.results || json?.results || [];
       return list.map((item, idx) => {
         const downloads = Array.isArray(item.downloadUrl) ? item.downloadUrl : [];
-        const bestAudio =
-          downloads.find((d) => d.quality === '320kbps')?.url ||
-          downloads.find((d) => d.quality === '160kbps')?.url ||
-          downloads[downloads.length - 1]?.url ||
-          '';
+        const bestObj =
+          downloads.find((d) => d.quality === '320kbps') ||
+          downloads.find((d) => d.quality === '160kbps') ||
+          downloads[downloads.length - 1] ||
+          null;
+        const bestAudio = bestObj?.url || '';
+        const quality = bestObj?.quality ? bestObj.quality.toUpperCase() : 'FULL';
         const images = Array.isArray(item.image) ? item.image : [];
         const cover =
           images.find((im) => im.quality === '500x500')?.url ||
@@ -73,14 +86,19 @@ const PROVIDERS = [
           item.primaryArtists ||
           'Unknown Artist';
         return {
-          id: item.id || `js-${idx}`,
+          id: String(item.id || `js-${idx}`),
           title: decodeHtml(item.name || item.title || 'Untitled'),
           artist: decodeHtml(primaryArtist),
           album: decodeHtml(item.album?.name || ''),
+          year: String(item.year || item.releaseDate || '').slice(0, 4),
+          language: decodeHtml(item.language || ''),
+          quality,
+          isPreview: false,
           duration: Number(item.duration) || 0,
           cover,
           audioUrl: bestAudio,
-          source: 'JioSaavn'
+          source: 'JioSaavn',
+          providerId: 'jiosaavn_sumit'
         };
       }).filter((t) => t.title && t.audioUrl);
     }
@@ -89,18 +107,24 @@ const PROVIDERS = [
     id: 'monochrome',
     label: 'Monochrome Lossless',
     badge: 'Lossless · monochrome.st',
+    isPreview: false,
     searchUrl: (q) => `https://tracks.monochrome.st/api/search?q=${encodeURIComponent(q)}`,
     parse: (json) => {
       const list = json?.tracks || json?.results || json?.data || (Array.isArray(json) ? json : []);
       return list.map((item, idx) => ({
-        id: item.id || `mono-${idx}`,
+        id: String(item.id || `mono-${idx}`),
         title: item.title || item.name || 'Untitled',
         artist: item.artist || item.artists?.[0]?.name || 'Unknown Artist',
         album: item.album?.title || item.album || '',
+        year: String(item.year || '').slice(0, 4),
+        language: item.language || '',
+        quality: item.quality || 'FLAC / LOSSLESS',
+        isPreview: false,
         duration: Number(item.duration) || 0,
         cover: item.cover || item.artwork || '',
         audioUrl: item.streamUrl || item.url || item.audioUrl || '',
-        source: 'Monochrome'
+        source: 'Monochrome',
+        providerId: 'monochrome'
       })).filter((t) => t.title && t.audioUrl);
     }
   },
@@ -108,6 +132,7 @@ const PROVIDERS = [
     id: 'itunes',
     label: 'iTunes (30s Preview)',
     badge: '30s Preview · iTunes',
+    isPreview: true,
     searchUrl: (q) => `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=25`,
     parse: (json) => {
       const list = json?.results || [];
@@ -116,10 +141,15 @@ const PROVIDERS = [
         title: item.trackName || 'Untitled',
         artist: item.artistName || 'Unknown Artist',
         album: item.collectionName || '',
+        year: String(item.releaseDate || '').slice(0, 4),
+        language: item.primaryGenreName || '',
+        quality: '256K AAC · 30s',
+        isPreview: true,
         duration: 30,
         cover: (item.artworkUrl100 || '').replace('100x100bb', '500x500bb'),
         audioUrl: item.previewUrl || '',
-        source: 'iTunes (30s)'
+        source: 'iTunes (30s)',
+        providerId: 'itunes'
       })).filter((t) => t.title && t.audioUrl);
     }
   }
@@ -140,6 +170,21 @@ function decodeHtml(str) {
   const txt = document.createElement('textarea');
   txt.innerHTML = str;
   return txt.value;
+}
+
+function cleanLyricsText(raw) {
+  if (!raw) return '';
+  return decodeHtml(String(raw))
+    .replace(/<br\s*\/?>/gi, '
+')
+    .replace(/<\/p>/gi, '
+')
+    .replace(/<[^>]+>/g, '')
+    .replace(/
+{3,}/g, '
+
+')
+    .trim();
 }
 
 function formatTime(sec) {
@@ -174,6 +219,9 @@ const state = {
   currentIndex: -1,
   isPlaying: false,
   playerExpanded: false,
+  lyricsText: '',
+  lyricsLoading: false,
+  lyricsTrackKey: '',
   autoRadio: localStorage.getItem(STORAGE_KEYS.AUTO_RADIO_PREF) !== 'false',
   shuffle: localStorage.getItem(STORAGE_KEYS.SHUFFLE_PREF) === 'true',
   repeatMode: localStorage.getItem(STORAGE_KEYS.REPEAT_PREF) || 'queue',
@@ -197,7 +245,7 @@ function getOrderedProviders() {
   return [chosen, ...PROVIDERS.filter((p) => p.id !== state.sourcePref)];
 }
 
-async function fetchWithTimeout(url, ms = 6000) {
+async function fetchWithTimeout(url, ms = 6500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -220,21 +268,91 @@ function buildSearchQueries(rawQuery) {
 async function fetchTracksFromProviders(rawQuery) {
   const candidateQueries = buildSearchQueries(rawQuery);
   const orderedProviders = getOrderedProviders();
+  const strictSingleSource = state.sourcePref !== 'auto';
 
   for (const queryVariant of candidateQueries) {
     for (const provider of orderedProviders) {
       try {
-        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 6000);
+        const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 6500);
         const tracks = provider.parse(json);
         if (Array.isArray(tracks) && tracks.length > 0) {
-          return { tracks, provider };
+          return { tracks, provider, fallbackUsed: false };
         }
       } catch (err) {
         console.warn(`Provider ${provider.id} failed:`, err.message);
       }
+      if (strictSingleSource) break;
     }
   }
+
+  // If user selected a specific source and it returned empty/failed, fall back to other sources
+  if (strictSingleSource) {
+    for (const queryVariant of candidateQueries) {
+      for (const provider of PROVIDERS) {
+        if (provider.id === state.sourcePref) continue;
+        try {
+          const json = await fetchWithTimeout(provider.searchUrl(queryVariant), 6500);
+          const tracks = provider.parse(json);
+          if (Array.isArray(tracks) && tracks.length > 0) {
+            return { tracks, provider, fallbackUsed: true };
+          }
+        } catch (err) {
+          console.warn(`Fallback provider ${provider.id} failed:`, err.message);
+        }
+      }
+    }
+  }
+
   return null;
+}
+
+async function loadLyricsForTrack(track) {
+  if (!track) {
+    state.lyricsText = '';
+    state.lyricsLoading = false;
+    return;
+  }
+  const key = `${track.source}:${track.id}:${track.title}`;
+  if (state.lyricsTrackKey === key && (state.lyricsText || state.lyricsLoading)) return;
+
+  state.lyricsTrackKey = key;
+  state.lyricsLoading = true;
+  state.lyricsText = '';
+  renderPlayerBar();
+
+  // 1) Try provider lyrics endpoint if track has Saavn/JioSaavn ID
+  const provider = PROVIDERS.find((p) => p.id === track.providerId);
+  if (provider && provider.lyricsUrl && track.id) {
+    try {
+      const lJson = await fetchWithTimeout(provider.lyricsUrl(track.id), 4500);
+      const rawLyrics = lJson?.data?.lyrics || lJson?.lyrics || '';
+      const cleaned = cleanLyricsText(rawLyrics);
+      if (cleaned) {
+        state.lyricsText = cleaned;
+        state.lyricsLoading = false;
+        renderPlayerBar();
+        return;
+      }
+    } catch {}
+  }
+
+  // 2) Fallback to lrclib public lyrics API
+  try {
+    const artistParam = track.artist && track.artist !== 'Unknown Artist' ? `&artist_name=${encodeURIComponent(track.artist.split(',')[0].trim())}` : '';
+    const lrclibUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(track.title)}${artistParam}`;
+    const lrc = await fetchWithTimeout(lrclibUrl, 4500);
+    const cleaned = cleanLyricsText(lrc?.plainLyrics || lrc?.syncedLyrics || '');
+    if (cleaned) {
+      state.lyricsText = cleaned;
+      state.lyricsLoading = false;
+      renderPlayerBar();
+      return;
+    }
+  } catch {}
+
+  state.lyricsText = '';
+  state.lyricsLoading = false;
+  renderPlayerBar();
 }
 
 async function runSearch(rawQuery) {
@@ -248,17 +366,22 @@ async function runSearch(rawQuery) {
 
   state.query = q;
   state.isLoading = true;
-  state.statusMessage = state.lang === 'bn' ? 'পূর্ণ গানের সোর্স খোঁজা হচ্ছে...' : 'Searching full-track sources...';
+  state.statusMessage = state.lang === 'bn' ? 'সোর্স থেকে গান খোঁজা হচ্ছে...' : 'Searching sources...';
   render();
 
   const found = await fetchTracksFromProviders(q);
   if (found) {
     state.results = found.tracks;
     state.activeSourceLabel = found.provider.badge;
-    state.statusMessage =
-      state.lang === 'bn'
-        ? `${found.tracks.length}টি গান পাওয়া গেছে · ${found.provider.label} (একটি শেষ হলে পরেরটি অটো চলবে)`
-        : `${found.tracks.length} tracks found · ${found.provider.label} (Auto-next enabled)`;
+    if (state.lang === 'bn') {
+      state.statusMessage = found.fallbackUsed
+        ? `নির্বাচিত সোর্সে ফলাফল না থাকায় ${found.provider.label} থেকে ${found.tracks.length}টি গান দেখানো হচ্ছে`
+        : `${found.tracks.length}টি গান পাওয়া গেছে · ${found.provider.label}`;
+    } else {
+      state.statusMessage = found.fallbackUsed
+        ? `Fallback to ${found.provider.label}: ${found.tracks.length} tracks found`
+        : `${found.tracks.length} tracks found · ${found.provider.label}`;
+    }
     state.isLoading = false;
     render();
     return;
@@ -327,6 +450,8 @@ function playTrack(track, listContext = null, { keepQueue = false } = {}) {
     state.isPlaying = false;
     renderPlayerBar();
   });
+
+  loadLyricsForTrack(activeTrack);
 
   if (state.autoRadio && state.currentIndex >= state.queue.length - 2) {
     appendRadioTracks(activeTrack).then((added) => {
@@ -480,16 +605,32 @@ function renderPlayerBar() {
   const isBn = state.lang === 'bn';
 
   if (state.playerExpanded) {
+    const infoPills = [
+      track.quality ? `<span class="info-pill">🎧 ${escapeHtml(track.quality)}</span>` : '',
+      track.source ? `<span class="info-pill">📡 ${escapeHtml(track.source)}</span>` : '',
+      track.album ? `<span class="info-pill">💿 ${escapeHtml(track.album)}</span>` : '',
+      track.year ? `<span class="info-pill">📅 ${escapeHtml(track.year)}</span>` : '',
+      track.language ? `<span class="info-pill">🌐 ${escapeHtml(track.language)}</span>` : ''
+    ].filter(Boolean).join('');
+
+    const lyricsHtml = state.lyricsLoading
+      ? `<span class="lyrics-muted">${isBn ? 'লিরিক্স খোঁজা হচ্ছে...' : 'Loading lyrics...'}</span>`
+      : state.lyricsText
+        ? escapeHtml(state.lyricsText)
+        : `<span class="lyrics-muted">${isBn ? 'এই গানের লিরিক্স পাওয়া যায়নি।' : 'Lyrics not available for this track.'}</span>`;
+
     bar.className = 'player-bar visible expanded';
     bar.innerHTML = `
       <div class="expanded-header">
         <button class="pill-btn" id="gw-collapse-btn">⌄ ${isBn ? 'নিচে নামান' : 'Minimize'}</button>
-        <span class="chip">${escapeHtml(track.source || '')}</span>
+        <span class="chip">${escapeHtml(track.quality || track.source || '')}</span>
       </div>
       <div class="expanded-art-wrap">
         <img class="expanded-art" src="${escapeAttr(track.cover || 'icon-512.png')}" alt="" onerror="this.src='icon-512.png'">
         <div class="expanded-title">${escapeHtml(track.title)}</div>
         <div class="expanded-artist">${escapeHtml(track.artist)}</div>
+        <div class="info-pills">${infoPills}</div>
+        <div class="lyrics-box">${lyricsHtml}</div>
       </div>
       <div>
         <div class="player-seek">
@@ -498,11 +639,11 @@ function renderPlayerBar() {
           <span id="gw-time-dur">${formatTime(totalSec)}</span>
         </div>
         <div class="expanded-controls">
-          <button class="ctrl-btn mode-btn ${state.shuffle ? 'active' : ''}" id="gw-shuffle-btn" title="Shuffle">🔀</button>
+          <button class="ctrl-btn mode-btn ${state.shuffle ? 'active' : ''}" id="gw-shuffle-btn" title="Shuffle">🔀 <span>${isBn ? (state.shuffle ? 'শাফল অন' : 'শাফল') : (state.shuffle ? 'Shuffle ON' : 'Shuffle')}</span></button>
           <button class="ctrl-btn big" id="gw-prev-btn">⏮</button>
           <button class="ctrl-btn big primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
           <button class="ctrl-btn big" id="gw-next-btn">⏭</button>
-          <button class="ctrl-btn mode-btn ${state.repeatMode === 'one' ? 'active' : ''}" id="gw-repeat-btn" title="Repeat One">🔂</button>
+          <button class="ctrl-btn mode-btn ${state.repeatMode === 'one' ? 'active' : ''}" id="gw-repeat-btn" title="Repeat One">🔂 <span>${isBn ? (state.repeatMode === 'one' ? 'রিপিট ১' : 'রিপিট') : (state.repeatMode === 'one' ? 'Repeat 1' : 'Repeat')}</span></button>
         </div>
         <div class="up-next-box">
           ${isBn ? 'এরপর বাজবে' : 'Up next'}: <strong>${escapeHtml(nextTrack ? `${nextTrack.title} — ${nextTrack.artist}` : (state.autoRadio ? 'অটো রেডিও লোড হচ্ছে...' : 'কিউ শেষ'))}</strong>
@@ -530,13 +671,14 @@ function renderPlayerBar() {
       renderPlayerBar();
     });
   } else {
+    const miniMeta = [track.artist, track.quality, track.source].filter(Boolean).join(' · ');
     bar.className = 'player-bar visible';
     bar.innerHTML = `
       <div class="player-top">
         <img class="player-thumb" src="${escapeAttr(track.cover || 'icon-192.png')}" alt="" onerror="this.src='icon-192.png'">
         <div class="player-info">
           <div class="player-title">${escapeHtml(track.title)}</div>
-          <div class="player-artist">${escapeHtml(track.artist)} · ${isBn ? 'ট্যাপ করে বড় করুন' : 'Tap to expand'}</div>
+          <div class="player-artist">${escapeHtml(miniMeta)}</div>
         </div>
         <div class="player-controls">
           <button class="ctrl-btn primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
@@ -551,6 +693,7 @@ function renderPlayerBar() {
     `;
     bar.onclick = () => {
       state.playerExpanded = true;
+      loadLyricsForTrack(track);
       renderPlayerBar();
     };
     document.getElementById('gw-play-btn')?.addEventListener('click', togglePlayPause);
@@ -607,12 +750,18 @@ function renderTrackList(tracks, emptyText) {
         const current = getCurrentTrack();
         const active = current && current.id === track.id && current.source === track.source;
         const fav = isFavorite(track);
+        const badgeClass = track.isPreview ? 'q-badge preview' : 'q-badge';
+        const infoLine = [track.artist, track.album, track.year].filter(Boolean).join(' · ');
         return `
           <div class="track-card ${active ? 'active' : ''}" data-action="play-track" data-index="${i}">
             <img class="track-cover" src="${escapeAttr(track.cover || 'icon-192.png')}" alt="" loading="lazy" onerror="this.src='icon-192.png'">
             <div class="track-meta">
               <div class="track-title">${escapeHtml(track.title)}</div>
-              <div class="track-sub">${escapeHtml(track.artist)}${track.source ? ` · ${escapeHtml(track.source)}` : ''}</div>
+              <div class="track-sub">
+                <span>${escapeHtml(infoLine)}</span>
+                ${track.quality ? `<span class="${badgeClass}">${escapeHtml(track.quality)}</span>` : ''}
+                ${track.source ? `<span class="q-badge">${escapeHtml(track.source)}</span>` : ''}
+              </div>
             </div>
             <div class="track-actions">
               <span class="track-dur">${track.duration ? formatTime(track.duration) : ''}</span>
