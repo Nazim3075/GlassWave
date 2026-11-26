@@ -364,26 +364,38 @@ const PROVIDERS = [
   {
     id: 'monochrome',
     label: 'Monochrome Lossless',
-    badge: 'Lossless · monochrome.st',
+    badge: 'Lossless · tracks.monochrome.st',
     isPreview: false,
-    searchUrl: (q) => `https://tracks.monochrome.st/api/search?q=${encodeURIComponent(q)}`,
+    searchUrl: (q) => `https://tracks.monochrome.st/search?q=${encodeURIComponent(q)}`,
     parse: (json) => {
       const list = json?.tracks || json?.results || json?.data || (Array.isArray(json) ? json : []);
-      return list.map((item, idx) => ({
-        id: String(item.id || `mono-${idx}`),
-        title: item.title || item.name || 'Untitled',
-        artist: item.artist || item.artists?.[0]?.name || 'Unknown Artist',
-        album: item.album?.title || item.album || '',
-        year: String(item.year || '').slice(0, 4),
-        language: item.language || '',
-        quality: item.quality || 'FLAC / LOSSLESS',
-        isPreview: false,
-        duration: Number(item.duration) || 0,
-        cover: item.cover || item.artwork || '',
-        audioUrl: item.streamUrl || item.url || item.audioUrl || '',
-        source: 'Monochrome',
-        providerId: 'monochrome'
-      })).filter((t) => t.title && t.audioUrl);
+      return list.map((item, idx) => {
+        const trackId = String(item.trackId || item.id || '');
+        const artistStr = Array.isArray(item.artistNames) && item.artistNames.length > 0
+          ? item.artistNames.join(', ')
+          : (item.artist || item.artists?.[0]?.name || 'Unknown Artist');
+        const durSec = item.duration
+          ? (Number(item.duration) > 10000 ? Math.round(Number(item.duration) / 1000) : Number(item.duration))
+          : 0;
+        const streamUrl = trackId
+          ? `https://tracks.monochrome.st/track/${encodeURIComponent(trackId)}?quality=LOSSLESS`
+          : (item.streamUrl || item.url || item.audioUrl || '');
+        return {
+          id: trackId || `mono-${idx}`,
+          title: item.title || item.name || 'Untitled',
+          artist: artistStr,
+          album: item.album?.title || item.album || '',
+          year: String(item.year || '').slice(0, 4),
+          language: item.language || '',
+          quality: item.quality || 'FLAC · LOSSLESS',
+          isPreview: false,
+          duration: durSec,
+          cover: item.artwork || item.cover || '',
+          audioUrl: streamUrl,
+          source: 'Monochrome',
+          providerId: 'monochrome'
+        };
+      }).filter((t) => t.title && t.audioUrl);
     }
   },
   {
