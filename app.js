@@ -1,5 +1,4 @@
-// GlassWave Standalone Player v4.3 - Full Track Priority, Resilient Audio Recovery, Lyrics & Multi-Source Fallback
-// Providers: Saavn, JioSaavn, YouTube / YT Music (Piped & Invidious), Deezer, Amazon Music / iTunes, Monochrome
+// GlassWave Standalone Player v4.5 - Full Track Priority, Resilient Audio Recovery, Shuffle & Repeat Controls
 
 const STORAGE_KEYS = {
   RECENT: 'glasswave_recent_v1',
@@ -12,6 +11,8 @@ const STORAGE_KEYS = {
   SHUFFLE_PREF: 'glasswave_shuffle_v1',
   REPEAT_PREF: 'glasswave_repeat_v1'
 };
+
+const REPEAT_MODES = ['off', 'all', 'one'];
 
 const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
@@ -207,8 +208,6 @@ const PROVIDERS = [
     badge: 'Full · yt-dlp / Cobalt',
     isPreview: false,
     search: async (q) => {
-      // Use Piped / Invidious search to find video IDs and resolve direct audio stream via Cobalt / Piped / Invidious
-      const searchBases = [...PIPED_INSTANCES, ...INVIDIOUS_INSTANCES];
       for (const base of PIPED_INSTANCES) {
         try {
           const json = await fetchWithTimeout(
@@ -233,7 +232,6 @@ const PROVIDERS = [
                 audioUrl: '',
                 resolveAudio: async () => {
                   if (!videoId) return '';
-                  // Try Cobalt-style API first, then Piped streams
                   try {
                     const cRes = await fetch('https://api.cobalt.tools/', {
                       method: 'POST',
@@ -304,7 +302,6 @@ const PROVIDERS = [
     badge: 'Full · MeeTube',
     isPreview: false,
     search: async (q) => {
-      // Search via Piped / Invidious music & video endpoints and resolve direct stream URLs
       for (const base of PIPED_INSTANCES) {
         try {
           const json = await fetchWithTimeout(
@@ -432,7 +429,7 @@ const PROVIDERS = [
     parse: (json) => {
       const list = json?.results || [];
       return list.map((item, idx) => ({
-        id: String(item.trackId || `amz-${idx}`),
+        id: String(item.trackId || `am-${idx}`),
         title: item.trackName || 'Untitled',
         artist: item.artistName || 'Unknown Artist',
         album: item.collectionName || '',
@@ -472,10 +469,15 @@ function decodeHtml(str) {
 function cleanLyricsText(raw) {
   if (!raw) return '';
   return decodeHtml(String(raw))
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '
+')
+    .replace(/<\/p>/gi, '
+')
     .replace(/<[^>]+>/g, '')
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/
+{3,}/g, '
+
+')
     .trim();
 }
 
@@ -501,6 +503,12 @@ function saveJson(key, value) {
   } catch {}
 }
 
+function normalizeRepeatMode(raw) {
+  if (raw === 'one') return 'one';
+  if (raw === 'off' || raw === 'none') return 'off';
+  return 'all';
+}
+
 const state = {
   tab: 'search',
   query: '',
@@ -516,7 +524,7 @@ const state = {
   lyricsTrackKey: '',
   autoRadio: localStorage.getItem(STORAGE_KEYS.AUTO_RADIO_PREF) !== 'false',
   shuffle: localStorage.getItem(STORAGE_KEYS.SHUFFLE_PREF) === 'true',
-  repeatMode: localStorage.getItem(STORAGE_KEYS.REPEAT_PREF) || 'queue',
+  repeatMode: normalizeRepeatMode(localStorage.getItem(STORAGE_KEYS.REPEAT_PREF)),
   sourcePref: localStorage.getItem(STORAGE_KEYS.SOURCE_PREF) || 'auto',
   lang: localStorage.getItem(STORAGE_KEYS.LANG_PREF) || 'bn',
   speed: parseFloat(localStorage.getItem(STORAGE_KEYS.SPEED_PREF) || '1'),
@@ -798,24 +806,12 @@ async function attachAudioSource(track, resumeAtSec = 0) {
   }
 }
 
-function playTrack(track, listContext = null, { keepQueue = false } = {}) {
-  if (!track || (!track.audioUrl && typeof track.resolveAudio !== 'function')) return;
+function playTrackAtIndex(targetIdx) {
+  if (targetIdx < 0 || targetIdx >= state.queue.length) return;
+  state.currentIndex = targetIdx;
+  const activeTrack = state.queue[state.currentIndex];
+  if (!activeTrack) return;
 
-  if (!keepQueue) {
-    if (Array.isArray(listContext) && listContext.length > 0) {
-      state.queue = listContext.filter((t) => Boolean(t.audioUrl || typeof t.resolveAudio === 'function'));
-      state.currentIndex = state.queue.findIndex((t) => t.id === track.id && t.source === track.source);
-      if (state.currentIndex === -1) {
-        state.queue.unshift(track);
-        state.currentIndex = 0;
-      }
-    } else if (state.queue.length === 0) {
-      state.queue = [track];
-      state.currentIndex = 0;
-    }
-  }
-
-  const activeTrack = state.queue[state.currentIndex] || track;
   state.recoveringStream = false;
   attachAudioSource(activeTrack, 0);
   loadLyricsForTrack(activeTrack);
@@ -832,6 +828,34 @@ function playTrack(track, listContext = null, { keepQueue = false } = {}) {
 
   state.isPlaying = true;
   render();
+}
+
+function playTrack(track, listContext = null, { keepQueue = false } = {}) {
+  if (!track || (!track.audioUrl && typeof track.resolveAudio !== 'function')) return;
+
+  if (!keepQueue) {
+    if (Array.isArray(listContext) && listContext.length > 0) {
+      state.queue = listContext.filter((t) => Boolean(t.audioUrl || typeof t.resolveAudio === 'function'));
+      state.currentIndex = state.queue.findIndex((t) => t.id === track.id && t.source === track.source);
+      if (state.currentIndex === -1) {
+        state.queue.unshift(track);
+        state.currentIndex = 0;
+      }
+    } else if (state.queue.length === 0) {
+      state.queue = [track];
+      state.currentIndex = 0;
+    } else {
+      const existingIdx = state.queue.findIndex((t) => t.id === track.id && t.source === track.source);
+      if (existingIdx !== -1) {
+        state.currentIndex = existingIdx;
+      } else {
+        state.queue.splice(Math.max(0, state.currentIndex + 1), 0, track);
+        state.currentIndex = Math.max(0, state.currentIndex + 1);
+      }
+    }
+  }
+
+  playTrackAtIndex(state.currentIndex);
 }
 
 function togglePlayPause(e) {
@@ -852,52 +876,86 @@ function togglePlayPause(e) {
   }
 }
 
+function pickRandomQueueIndex() {
+  if (state.queue.length <= 1) return 0;
+  let randIdx = Math.floor(Math.random() * state.queue.length);
+  if (randIdx === state.currentIndex) {
+    randIdx = (state.currentIndex + 1) % state.queue.length;
+  }
+  return randIdx;
+}
+
 async function playNext(e, fromEnded = false) {
   if (e) e.stopPropagation();
   if (state.queue.length === 0) return;
 
   if (fromEnded && state.repeatMode === 'one' && state.currentIndex >= 0) {
-    playTrack(state.queue[state.currentIndex], state.queue, { keepQueue: true });
+    playTrackAtIndex(state.currentIndex);
     return;
   }
 
   if (state.shuffle && state.queue.length > 1) {
-    let randIdx = Math.floor(Math.random() * state.queue.length);
-    if (randIdx === state.currentIndex) {
-      randIdx = (state.currentIndex + 1) % state.queue.length;
-    }
-    state.currentIndex = randIdx;
-    playTrack(state.queue[randIdx], state.queue, { keepQueue: true });
+    playTrackAtIndex(pickRandomQueueIndex());
     return;
   }
 
   const nextIdx = state.currentIndex + 1;
   if (nextIdx < state.queue.length) {
-    state.currentIndex = nextIdx;
-    playTrack(state.queue[nextIdx], state.queue, { keepQueue: true });
+    playTrackAtIndex(nextIdx);
     return;
   }
 
-  if (state.autoRadio) {
+  if (state.autoRadio && (fromEnded || state.repeatMode !== 'off')) {
     const currentTrack = state.queue[state.currentIndex];
     const added = await appendRadioTracks(currentTrack);
     if (added && nextIdx < state.queue.length) {
-      state.currentIndex = nextIdx;
-      playTrack(state.queue[nextIdx], state.queue, { keepQueue: true });
+      playTrackAtIndex(nextIdx);
       return;
     }
   }
 
-  state.currentIndex = 0;
-  playTrack(state.queue[0], state.queue, { keepQueue: true });
+  if (state.repeatMode === 'all' || !fromEnded) {
+    playTrackAtIndex(0);
+    return;
+  }
+
+  audio.pause();
+  audio.currentTime = 0;
+  state.isPlaying = false;
+  renderPlayerBar();
 }
 
 function playPrev(e) {
   if (e) e.stopPropagation();
   if (state.queue.length === 0) return;
+
+  if (audio.currentTime > 3) {
+    audio.currentTime = 0;
+    return;
+  }
+
+  if (state.shuffle && state.queue.length > 1) {
+    playTrackAtIndex(pickRandomQueueIndex());
+    return;
+  }
+
   const prevIdx = (state.currentIndex - 1 + state.queue.length) % state.queue.length;
-  state.currentIndex = prevIdx;
-  playTrack(state.queue[prevIdx], state.queue, { keepQueue: true });
+  playTrackAtIndex(prevIdx);
+}
+
+function toggleShuffle(e) {
+  if (e) e.stopPropagation();
+  state.shuffle = !state.shuffle;
+  localStorage.setItem(STORAGE_KEYS.SHUFFLE_PREF, String(state.shuffle));
+  renderPlayerBar();
+}
+
+function cycleRepeatMode(e) {
+  if (e) e.stopPropagation();
+  const nextPos = (REPEAT_MODES.indexOf(state.repeatMode) + 1) % REPEAT_MODES.length;
+  state.repeatMode = REPEAT_MODES[nextPos];
+  localStorage.setItem(STORAGE_KEYS.REPEAT_PREF, state.repeatMode);
+  renderPlayerBar();
 }
 
 function toggleFavorite(track, event) {
@@ -1001,8 +1059,19 @@ function getCurrentTrack() {
 function getNextUpTrack() {
   if (state.queue.length === 0) return null;
   if (state.repeatMode === 'one') return state.queue[state.currentIndex] || null;
-  const nextIdx = (state.currentIndex + 1) % state.queue.length;
-  return state.queue[nextIdx] || null;
+  if (state.shuffle && state.queue.length > 1) {
+    return state.queue[(state.currentIndex + 1) % state.queue.length] || null;
+  }
+  const nextIdx = state.currentIndex + 1;
+  if (nextIdx < state.queue.length) return state.queue[nextIdx] || null;
+  if (state.repeatMode === 'all' || state.autoRadio) return state.queue[0] || null;
+  return null;
+}
+
+function getRepeatLabel(isBn) {
+  if (state.repeatMode === 'one') return isBn ? 'রিপিট ১' : 'Repeat 1';
+  if (state.repeatMode === 'all') return isBn ? 'রিপিট সব' : 'Repeat All';
+  return isBn ? 'রিপিট বন্ধ' : 'Repeat Off';
 }
 
 function buildCodecSpec(track) {
@@ -1038,6 +1107,8 @@ function renderPlayerBar() {
   const isBn = state.lang === 'bn';
   const fav = isFavorite(track);
   const codecInfo = buildCodecSpec(track);
+  const repeatIcon = state.repeatMode === 'one' ? '🔂' : '🔁';
+  const repeatActive = state.repeatMode !== 'off';
 
   if (state.playerExpanded) {
     const infoPills = [
@@ -1080,11 +1151,11 @@ function renderPlayerBar() {
         </div>
 
         <div class="expanded-controls">
-          <button class="ctrl-btn mode-btn ${state.shuffle ? 'active' : ''}" id="gw-shuffle-btn" title="Shuffle">🔀 <span>${isBn ? (state.shuffle ? 'শাফল অন' : 'শাফল') : (state.shuffle ? 'Shuffle ON' : 'Shuffle')}</span></button>
-          <button class="ctrl-btn big" id="gw-prev-btn">⏮</button>
-          <button class="ctrl-btn big primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
-          <button class="ctrl-btn big" id="gw-next-btn">⏭</button>
-          <button class="ctrl-btn mode-btn ${state.repeatMode === 'one' ? 'active' : ''}" id="gw-repeat-btn" title="Repeat One">🔂 <span>${isBn ? (state.repeatMode === 'one' ? 'রিপিট ১' : 'রিপিট') : (state.repeatMode === 'one' ? 'Repeat 1' : 'Repeat')}</span></button>
+          <button type="button" class="ctrl-btn mode-btn ${state.shuffle ? 'active' : ''}" id="gw-shuffle-btn" title="Shuffle">🔀 <span>${isBn ? (state.shuffle ? 'শাফল অন' : 'শাফল') : (state.shuffle ? 'Shuffle ON' : 'Shuffle')}</span></button>
+          <button type="button" class="ctrl-btn big" id="gw-prev-btn">⏮</button>
+          <button type="button" class="ctrl-btn big primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
+          <button type="button" class="ctrl-btn big" id="gw-next-btn">⏭</button>
+          <button type="button" class="ctrl-btn mode-btn ${repeatActive ? 'active' : ''}" id="gw-repeat-btn" title="Repeat">${repeatIcon} <span>${escapeHtml(getRepeatLabel(isBn))}</span></button>
         </div>
 
         <div class="codec-badge-row">
@@ -1101,7 +1172,7 @@ function renderPlayerBar() {
         </div>
 
         <div class="up-next-box">
-          ${isBn ? 'এরপর বাজবে' : 'Up next'}: <strong>${escapeHtml(nextTrack ? `${nextTrack.title} — ${nextTrack.artist}` : (state.autoRadio ? 'অটো রেডিও লোড হচ্ছে...' : 'কিউ শেষ'))}</strong>
+          ${isBn ? 'এরপর বাজবে' : 'Up next'}: <strong>${escapeHtml(nextTrack ? `${nextTrack.title} — ${nextTrack.artist}` : (state.shuffle ? 'র‍্যান্ডম গান' : (state.autoRadio ? 'অটো রেডিও লোড হচ্ছে...' : 'কিউ শেষ')))}</strong>
         </div>
       </div>
     `;
@@ -1113,18 +1184,8 @@ function renderPlayerBar() {
     document.getElementById('gw-prev-btn')?.addEventListener('click', playPrev);
     document.getElementById('gw-play-btn')?.addEventListener('click', togglePlayPause);
     document.getElementById('gw-next-btn')?.addEventListener('click', (e) => playNext(e, false));
-    document.getElementById('gw-shuffle-btn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.shuffle = !state.shuffle;
-      localStorage.setItem(STORAGE_KEYS.SHUFFLE_PREF, String(state.shuffle));
-      renderPlayerBar();
-    });
-    document.getElementById('gw-repeat-btn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.repeatMode = state.repeatMode === 'one' ? 'queue' : 'one';
-      localStorage.setItem(STORAGE_KEYS.REPEAT_PREF, state.repeatMode);
-      renderPlayerBar();
-    });
+    document.getElementById('gw-shuffle-btn')?.addEventListener('click', toggleShuffle);
+    document.getElementById('gw-repeat-btn')?.addEventListener('click', cycleRepeatMode);
     document.getElementById('gw-exp-fav-btn')?.addEventListener('click', (e) => {
       toggleFavorite(track, e);
     });
@@ -1154,8 +1215,10 @@ function renderPlayerBar() {
           <div class="player-artist">${escapeHtml(miniMeta)}</div>
         </div>
         <div class="player-controls">
-          <button class="ctrl-btn primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
-          <button class="ctrl-btn" id="gw-next-btn">⏭</button>
+          <button type="button" class="ctrl-btn ${state.shuffle ? 'mode-btn active' : ''}" id="gw-mini-shuffle-btn" title="Shuffle">🔀</button>
+          <button type="button" class="ctrl-btn primary" id="gw-play-btn">${state.isPlaying ? '❚❚' : '▶'}</button>
+          <button type="button" class="ctrl-btn" id="gw-next-btn">⏭</button>
+          <button type="button" class="ctrl-btn ${repeatActive ? 'mode-btn active' : ''}" id="gw-mini-repeat-btn" title="${escapeAttr(getRepeatLabel(isBn))}">${repeatIcon}</button>
         </div>
       </div>
       <div class="player-seek">
@@ -1169,8 +1232,10 @@ function renderPlayerBar() {
       loadLyricsForTrack(track);
       renderPlayerBar();
     };
+    document.getElementById('gw-mini-shuffle-btn')?.addEventListener('click', toggleShuffle);
     document.getElementById('gw-play-btn')?.addEventListener('click', togglePlayPause);
     document.getElementById('gw-next-btn')?.addEventListener('click', (e) => playNext(e, false));
+    document.getElementById('gw-mini-repeat-btn')?.addEventListener('click', cycleRepeatMode);
   }
 
   const prog = document.getElementById('gw-progress');
