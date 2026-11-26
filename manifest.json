@@ -1,7 +1,7 @@
 {
   "name": "GlassWave Music",
   "short_name": "GlassWave",
-  "description": "Standalone music player with continuous autoplay and multi-source fallback search",
+  "description": "Standalone music player with YouTube Music home playlists and Monochrome Lossless FLAC playback",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

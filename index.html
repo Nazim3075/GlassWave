@@ -267,6 +267,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
     }
 
     .status-banner {
@@ -302,6 +303,68 @@
     .empty-sub {
       font-size: 13px;
       color: var(--muted);
+    }
+
+    /* Horizontal YT Music Home Playlists Row */
+    .yt-playlists-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+
+    .yt-playlists-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .yt-pl-card {
+      min-width: 148px;
+      max-width: 148px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 16px;
+      padding: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.14s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .yt-pl-card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .yt-pl-card:active {
+      transform: scale(0.97);
+    }
+
+    .yt-pl-cover {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #18181b;
+      margin-bottom: 8px;
+    }
+
+    .yt-pl-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .yt-pl-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .track-list {
